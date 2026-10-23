@@ -11,7 +11,15 @@ config.local.*
 /bin/
 /dist/
 
+# Built frontend, embedded into the Go binary (internal/webui/webui.go).
+# index.html is committed as a placeholder so the module always builds;
+# `task web:build` overwrites it with the real build (locally modified,
+# never committed) plus the hashed asset files below.
+internal/webui/dist/*
+!internal/webui/dist/index.html
+
 *.test
 *.out
+coverage.html
 
 .DS_Store

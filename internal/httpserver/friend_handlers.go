@@ -13,7 +13,7 @@ import (
 )
 
 func (s *Server) registerPublicRoutes(mux *http.ServeMux) {
-	mux.HandleFunc("GET "+s.publicPath("/l/{uuid}"), s.handleFriendStatus)
+	mux.HandleFunc("GET "+s.publicPath("/l/{uuid}/status"), s.handleFriendStatus)
 	mux.HandleFunc("POST "+s.publicPath("/l/{uuid}/login"), s.handleFriendLogin)
 	mux.HandleFunc("POST "+s.publicPath("/l/{uuid}/logout"), s.requireFriend(s.handleFriendLogout))
 	mux.HandleFunc("GET "+s.publicPath("/l/{uuid}/dashboard"), s.requireFriend(s.handleFriendDashboard))

@@ -7,6 +7,7 @@ import (
 	"net/http/httptest"
 	"strings"
 	"testing"
+	"testing/fstest"
 	"time"
 
 	"golang.org/x/crypto/bcrypt"
@@ -16,6 +17,15 @@ import (
 	"github.com/mafeko/ladegast/internal/evcc"
 	"github.com/mafeko/ladegast/internal/store"
 )
+
+// testAssets is a minimal stand-in for the embedded frontend build, kept
+// independent of internal/webui so these tests don't depend on whether a
+// real frontend has been built.
+func testAssets() fstest.MapFS {
+	return fstest.MapFS{
+		"index.html": &fstest.MapFile{Data: []byte("<html><body>test</body></html>")},
+	}
+}
 
 func fakeEVCC(t *testing.T) *httptest.Server {
 	t.Helper()
@@ -52,7 +62,7 @@ func testServer(t *testing.T, evccURL string) (*Server, *store.Store, config.Con
 	t.Cleanup(func() { st.Close() })
 
 	client := evcc.NewClient(evccURL, "test-key")
-	return New(cfg, st, client), st, cfg
+	return New(cfg, st, client, testAssets()), st, cfg
 }
 
 func newClientWithJar(t *testing.T) *http.Client {
@@ -97,7 +107,7 @@ func TestFriendFlow(t *testing.T) {
 	client := newClientWithJar(t)
 
 	// Status before login.
-	resp, err := client.Get(httpSrv.URL + "/public/l/" + friend.ID)
+	resp, err := client.Get(httpSrv.URL + "/public/l/" + friend.ID + "/status")
 	if err != nil {
 		t.Fatalf("GET status: %v", err)
 	}
@@ -105,6 +115,16 @@ func TestFriendFlow(t *testing.T) {
 	mustDecode(t, resp, &status)
 	if status.Authenticated {
 		t.Fatal("expected authenticated=false before login")
+	}
+
+	// The bare link itself serves the embedded SPA shell, regardless of
+	// login state - the frontend router decides what to show.
+	resp, err = client.Get(httpSrv.URL + "/public/l/" + friend.ID)
+	if err != nil {
+		t.Fatalf("GET page: %v", err)
+	}
+	if resp.StatusCode != http.StatusOK {
+		t.Fatalf("page status = %d, want 200", resp.StatusCode)
 	}
 
 	// Wrong PIN.
@@ -252,7 +272,7 @@ func TestAdminFlow(t *testing.T) {
 		t.Fatal("regenerated ID should differ from original")
 	}
 
-	oldStatusResp, _ := client.Get(httpSrv.URL + "/public/l/" + created.ID)
+	oldStatusResp, _ := client.Get(httpSrv.URL + "/public/l/" + created.ID + "/status")
 	if oldStatusResp.StatusCode != http.StatusNotFound {
 		t.Fatalf("old link status = %d, want 404 after regeneration", oldStatusResp.StatusCode)
 	}
@@ -575,6 +595,66 @@ func TestEnsureAdminBootstrap_MissingCredentials(t *testing.T) {
 
 	if err := EnsureAdminBootstrap(st, config.Config{}); err == nil {
 		t.Fatal("expected error when no admin exists and no credentials are set, got nil")
+	}
+}
+
+func TestFrontendRoutes(t *testing.T) {
+	evccSrv := fakeEVCC(t)
+	defer evccSrv.Close()
+
+	srv, _, _ := testServer(t, evccSrv.URL)
+	httpSrv := httptest.NewServer(srv.Handler())
+	defer httpSrv.Close()
+
+	pageRoutes := []string{
+		"/",
+		"/public/l/11111111-1111-4111-8111-111111111111",
+		"/admin",
+		"/admin/view-as/11111111-1111-4111-8111-111111111111",
+	}
+	for _, path := range pageRoutes {
+		resp, err := http.Get(httpSrv.URL + path)
+		if err != nil {
+			t.Fatalf("GET %s: %v", path, err)
+		}
+		if resp.StatusCode != http.StatusOK {
+			t.Errorf("GET %s status = %d, want 200", path, resp.StatusCode)
+		}
+		ct := resp.Header.Get("Content-Type")
+		if !strings.HasPrefix(ct, "text/html") {
+			t.Errorf("GET %s content-type = %q, want text/html", path, ct)
+		}
+	}
+}
+
+func TestFrontendRoutes_NilAssetsDisablesThem(t *testing.T) {
+	evccSrv := fakeEVCC(t)
+	defer evccSrv.Close()
+
+	cfg := config.Config{
+		PublicBaseURL:        "http://localhost",
+		PublicPathPrefix:     "/public",
+		AdminPathPrefix:      "/admin",
+		SessionSecret:        "test-secret",
+		RateLimitMaxAttempts: 3,
+		RateLimitWindow:      15 * time.Minute,
+	}
+	st, err := store.Open(t.TempDir())
+	if err != nil {
+		t.Fatalf("store.Open: %v", err)
+	}
+	defer st.Close()
+	srv := New(cfg, st, evcc.NewClient(evccSrv.URL, "test-key"), nil)
+
+	httpSrv := httptest.NewServer(srv.Handler())
+	defer httpSrv.Close()
+
+	resp, err := http.Get(httpSrv.URL + "/")
+	if err != nil {
+		t.Fatalf("GET /: %v", err)
+	}
+	if resp.StatusCode != http.StatusNotFound {
+		t.Fatalf("GET / status = %d, want 404 when no assets are configured", resp.StatusCode)
 	}
 }
 

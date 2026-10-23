@@ -8,6 +8,7 @@ import (
 	"github.com/mafeko/ladegast/internal/evcc"
 	"github.com/mafeko/ladegast/internal/httpserver"
 	"github.com/mafeko/ladegast/internal/store"
+	"github.com/mafeko/ladegast/internal/webui"
 )
 
 func main() {
@@ -26,8 +27,13 @@ func main() {
 		log.Fatalf("admin bootstrap: %v", err)
 	}
 
+	assets, err := webui.Assets()
+	if err != nil {
+		log.Fatalf("frontend assets: %v", err)
+	}
+
 	evccClient := evcc.NewClient(cfg.EVCCBaseURL, cfg.EVCCAPIKey)
-	srv := httpserver.New(cfg, st, evccClient)
+	srv := httpserver.New(cfg, st, evccClient, assets)
 
 	log.Printf("ladegast listening on %s (public=%s admin=%s)", cfg.ListenAddr, cfg.PublicPathPrefix, cfg.AdminPathPrefix)
 	if err := http.ListenAndServe(cfg.ListenAddr, srv.Handler()); err != nil {
