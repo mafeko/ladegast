@@ -36,31 +36,37 @@ docker run --rm -p 8080:8080 \
   vorgegeben). Dieses Verzeichnis muss ein beschreibbares Volume sein,
   sonst schlägt der Start fehl ("permission denied" beim Öffnen der
   Datenbankdatei).
-- Es gibt keinen eingebetteten Healthcheck; `GET {PUBLIC_PATH_PREFIX}/l/<irgendeine-uuid>`
-  antwortet mit 404 sobald der Prozess läuft und eignet sich als einfacher
-  Liveness-Check.
+- Es gibt keinen eingebetteten Healthcheck; `GET /` antwortet mit 200
+  (SPA-Shell) sobald der Prozess läuft und eignet sich als einfacher
+  Liveness-Check. `GET {PUBLIC_PATH_PREFIX}/l/<irgendeine-uuid>/status`
+  antwortet mit 404 für eine unbekannte UUID, falls ein spezifischerer
+  Check gewünscht ist.
 
 ## 3. Reverse Proxy / Ingress — die einzige harte Anforderung
 
-Ladegast exponiert intern zwei Pfadpräfixe (Default `/public` und
+Ladegast exponiert intern zwei API-Pfadpräfixe (Default `/public` und
 `/admin`, konfigurierbar über `LADEGAST_PUBLIC_PATH_PREFIX` /
-`LADEGAST_ADMIN_PATH_PREFIX`). **Alles, was von außen (Internet) erreichbar
-ist, darf nur `PUBLIC_PATH_PREFIX` sehen.** `ADMIN_PATH_PREFIX` ist für den
-Betreiber selbst gedacht und muss durch die Infrastruktur abgeschnitten
-werden — Ladegast selbst erzwingt das nicht (kein IP-Allowlisting o. Ä. im
-Code, siehe DESIGN.md Abschnitt 1).
+`LADEGAST_ADMIN_PATH_PREFIX`) sowie das eingebettete Frontend an der Root
+(`/`, `/assets/*`, die Seiten-Routen — siehe DESIGN.md Abschnitt 6).
+**Von außen (Internet) darf alles außer `ADMIN_PATH_PREFIX` erreichbar
+sein.** Die Admin-Oberfläche selbst liegt unter `ADMIN_PATH_PREFIX` und ist
+damit automatisch mitgeschützt, sobald dieser Pfad abgeschnitten wird.
+`ADMIN_PATH_PREFIX` ist für den Betreiber selbst gedacht und muss durch
+die Infrastruktur abgeschnitten werden — Ladegast selbst erzwingt das
+nicht (kein IP-Allowlisting o. Ä. im Code, siehe DESIGN.md Abschnitt 1).
 
 Wie das konkret aussieht, ist Betreiber-Sache. Optionen, ohne Anspruch auf
 Vollständigkeit:
 
 - **Separate Services/Ingress-Objekte:** ein öffentlicher Ingress routet
-  nur auf `PUBLIC_PATH_PREFIX`; der Admin-Pfad wird über ein zweites,
-  rein clusterinternes Service-Objekt erreicht (z. B. `kubectl
+  auf alles außer `ADMIN_PATH_PREFIX`; der Admin-Pfad wird über ein
+  zweites, rein clusterinternes Service-Objekt erreicht (z. B. `kubectl
   port-forward` oder ein internes Ingress nur im VPN).
 - **Reverse-Proxy-Routing-Regel:** der öffentlich erreichbare Proxy
-  (Caddy, nginx, Traefik, …) bekommt eine einzelne Regel, die nur Pfade
-  unter `PUBLIC_PATH_PREFIX` weiterleitet und alles andere mit 404
-  beantwortet, bevor es überhaupt bei Ladegast ankommt.
+  (Caddy, nginx, Traefik, …) bekommt eine einzelne Regel, die Pfade unter
+  `ADMIN_PATH_PREFIX` mit 404 beantwortet (oder gar nicht erst weiterleitet)
+  und alles andere unverändert durchlässt, bevor es überhaupt bei Ladegast
+  ankommt.
 - **Netzwerk-Ebene:** Ladegast läuft nur in einem Netz, das sowieso nicht
   von außen erreichbar ist (z. B. ein Tailscale-only-Netz), und nur ein
   einzelner externer Reverse Proxy mit der Regel aus dem vorigen Punkt
@@ -82,15 +88,16 @@ Tailscale mit einem Hetzner-Server, auf dem bereits Caddy läuft:
    der Admin-Bereich wird nur über das Heimnetz/VPN direkt angesprochen.
 3. Auf dem Hetzner-Server bekommt die bestehende Caddy-Instanz einen
    zusätzlichen `reverse_proxy`-Block für die gewünschte Subdomain, der
-   ausschließlich Pfade unter `PUBLIC_PATH_PREFIX` über den
-   Tailscale-Tunnel an den ClusterIP-Service weiterleitet.
+   über den Tailscale-Tunnel an den ClusterIP-Service weiterleitet - mit
+   einer vorgeschalteten Regel, die Pfade unter `ADMIN_PATH_PREFIX`
+   ablehnt.
 4. EVCC selbst bleibt wie bisher rein clusterintern (kein eigenes
    Ingress); Ladegast erreicht es direkt über `LADEGAST_EVCC_BASE_URL`
    im selben Netz.
 
 Dieses Szenario ist ein Beispiel, keine Vorgabe — jede andere Kombination
 aus Reverse Proxy, Orchestrierung und Netzwerk funktioniert genauso, solange
-Punkt 3 (nur `PUBLIC_PATH_PREFIX` von außen) eingehalten wird.
+Punkt 3 (`ADMIN_PATH_PREFIX` nicht von außen erreichbar) eingehalten wird.
 
 ## 5. Backups
 

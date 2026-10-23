@@ -38,7 +38,7 @@ config.local.*
           beliebiger Reverse Proxy / Ingress
           (siehe DEPLOYMENT.md für ein dokumentiertes Beispiel)
                        │
-                       │  leitet nur PUBLIC_PATH_PREFIX weiter
+                       │  leitet alles außer ADMIN_PATH_PREFIX weiter
                        ▼
           ┌─────────────────────────────────┐
           │  ladegast (1 Binary/Prozess)     │
@@ -59,13 +59,18 @@ Netz, VPN, …) ist austauschbar und für den Kern der Anwendung irrelevant.
 Die einzige Kopplung: Ladegast muss den EVCC-Endpoint per HTTP erreichen und
 einen gültigen API-Key haben.
 
-**Netzwerk-Trennung Admin vs. Public ist Betreiber-Verantwortung:** Ladegast
-exponiert intern zwei Pfadpräfixe (`PUBLIC_PATH_PREFIX`, `ADMIN_PATH_PREFIX`,
-per ENV konfigurierbar, Default z. B. `/public` und `/admin`). Ob und wie der
-Admin-Pfad von außen abgeschnitten wird (kein Ingress-Rule, separates
-internes Service-Objekt, Firewall-Regel, VPN-only-Netz, Caddy-Proxy, der nur
-`/public/*` weiterleitet …) entscheidet die jeweilige Deployment-Umgebung.
-[DEPLOYMENT.md](DEPLOYMENT.md) beschreibt eine Variante davon als Beispiel.
+**Netzwerk-Trennung Admin vs. Rest ist Betreiber-Verantwortung:** Ladegast
+exponiert intern zwei API-Pfadpräfixe (`PUBLIC_PATH_PREFIX`,
+`ADMIN_PATH_PREFIX`, per ENV konfigurierbar, Default z. B. `/public` und
+`/admin`) sowie das eingebettete Frontend an der Root (`/`, `/assets/*`,
+die Seiten-Routen). Nach außen (Internet) darf **alles außer
+`ADMIN_PATH_PREFIX`** erreichbar sein — die Admin-Oberfläche liegt bewusst
+unter demselben Präfix wie die Admin-API und ist damit automatisch
+mitgeschützt. Ob und wie der Admin-Pfad von außen abgeschnitten wird (kein
+Ingress-Rule, separates internes Service-Objekt, Firewall-Regel,
+VPN-only-Netz, Caddy-Proxy mit entsprechender Regel …) entscheidet die
+jeweilige Deployment-Umgebung. [DEPLOYMENT.md](DEPLOYMENT.md) beschreibt
+eine Variante davon als Beispiel.
 
 ## 2. Konfiguration (Umgebungsvariablen)
 
@@ -173,8 +178,9 @@ verwendet.
 
 ### Public (`/public/*`)
 ```
-GET  /public/l/{uuid}              Login-Seite
+GET  /public/l/{uuid}/status        { authenticated } - nicht 404 nur, wenn uuid existiert
 POST /public/l/{uuid}/login         { pin } → Cookie
+POST /public/l/{uuid}/logout
 GET  /public/l/{uuid}/dashboard     Übersicht (Tag/Woche/Monat/Jahr)
 GET  /public/l/{uuid}/sessions      Session-Liste + Kosten
 POST /public/l/{uuid}/mode          { mode: "smart"|"now" }
@@ -182,16 +188,30 @@ POST /public/l/{uuid}/mode          { mode: "smart"|"now" }
 
 ### Admin (`/admin/*`)
 ```
-GET    /admin/login
 POST   /admin/login
+POST   /admin/logout
 GET    /admin/friends
-POST   /admin/friends                 neuen Freund anlegen (generiert UUID+PIN)
-PUT    /admin/friends/{id}            Tarife/Name/Fahrzeug ändern
+POST   /admin/friends                        neuen Freund anlegen (generiert UUID+PIN)
+PUT    /admin/friends/{id}                   Tarife/Name/Fahrzeug ändern
 POST   /admin/friends/{id}/regenerate-link   neue UUID, alte ungültig
 POST   /admin/friends/{id}/reset-pin         neue PIN setzen/anzeigen
-GET    /admin/friends/{id}/view-as           identische Ansicht wie /public/l/{uuid}/dashboard,
-                                              ohne erneuten PIN (Admin-Session reicht)
+GET    /admin/friends/{id}/view-as/dashboard  identisch zu .../l/{uuid}/dashboard, ohne PIN
+GET    /admin/friends/{id}/view-as/sessions   identisch zu .../l/{uuid}/sessions, ohne PIN
 ```
+
+### Frontend (eingebettetes SPA, außerhalb beider Präfixe)
+```
+GET /                                 SPA-Shell
+GET /assets/*, /favicon.svg           statische Build-Artefakte
+GET /public/l/{uuid}                  SPA-Shell (Freund-Seite; ruft intern .../status etc. auf)
+GET /admin                            SPA-Shell (Admin-Seite)
+GET /admin/view-as/{id}                SPA-Shell (Admin "Ansehen als")
+```
+Diese Routen liegen bewusst nicht unter den API-Präfixen (außer der eine
+Sonderfall `/public/l/{uuid}` selbst, der mit der API-Route
+`.../l/{uuid}/status` koexistiert, da unterschiedliche Pfad-Muster). Die
+Admin-Seite liegt unter `ADMIN_PATH_PREFIX` und ist damit automatisch
+mitgeschützt, sobald der Reverse Proxy diesen Pfad extern abschneidet.
 
 ## 7. Dashboard-Aggregation
 
