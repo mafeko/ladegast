@@ -5,10 +5,10 @@ import "fmt"
 // Summary totals a set of sessions in Ladegast's own currency terms, using
 // per-friend rates rather than EVCC's own (possibly dynamic) tariff.
 type Summary struct {
-	ChargedKWh float64
-	SolarKWh   float64
-	GridKWh    float64
-	CostEUR    float64
+	ChargedKWh float64 `json:"chargedKWh"`
+	SolarKWh   float64 `json:"solarKWh"`
+	GridKWh    float64 `json:"gridKWh"`
+	CostEUR    float64 `json:"costEUR"`
 }
 
 // FilterByVehicle returns only the sessions belonging to the given EVCC
