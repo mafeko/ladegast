@@ -5,11 +5,12 @@ Wallbox laden, ohne vollen EVCC-Zugriff zu bekommen. Verifiziert gegen eine
 reale EVCC-Instanz (siehe Abschnitt "EVCC-Integration").
 
 **Grundprinzip:** Ladegast ist eine eigenständige, deployment-agnostische
-Anwendung (ein Go-Binary + eingebettetes Vue-Frontend). Sie weiß nichts von
-Kubernetes, Tailscale oder Caddy — alles Umgebungsspezifische kommt über
-Umgebungsvariablen rein. Konkrete Deployment-Varianten (K8s, Caddy-Reverse-
-Proxy, …) sind **Referenz-Implementierungen** in `deploy/reference/`, nicht
-Teil der Kernarchitektur.
+Anwendung (ein Go-Binary + eigenständiges Vue-Frontend, siehe `web/`). Sie
+weiß nichts von Kubernetes, Tailscale oder Caddy — alles Umgebungsspezifische
+kommt über Umgebungsvariablen rein. Wie eine konkrete Umgebung das Binary
+oder Docker-Image betreibt, ist Betreiber-Sache und bewusst nur
+dokumentiert, nicht als Beispiel-Manifeste im Repo (siehe
+[DEPLOYMENT.md](DEPLOYMENT.md)).
 
 ## 0. Keine privaten Daten im Repository
 
@@ -18,8 +19,7 @@ Teil der Kernarchitektur.
 - Jede Konfigurationsdatei mit echten Werten (`.env`, `config.local.*`,
   Secrets) ist in `.gitignore` gelistet.
 - Für jede solche Datei existiert ein versioniertes Template mit
-  Platzhaltern: `.env.example`, `deploy/reference/caddy/Caddyfile.example`,
-  `deploy/reference/k8s/*.example.yaml`.
+  Platzhaltern, z. B. `.env.example`.
 - Dokumentation/Beispiele nutzen ausschließlich generische Platzhalter
   (`example.com`, `vehicle_1`, `friend-name`) — nie echte Daten aus diesem
   Projekt.
@@ -36,7 +36,7 @@ config.local.*
 
 ```
           beliebiger Reverse Proxy / Ingress
-          (Referenz: Caddy, siehe deploy/reference/caddy/)
+          (siehe DEPLOYMENT.md für ein dokumentiertes Beispiel)
                        │
                        │  leitet nur PUBLIC_PATH_PREFIX weiter
                        ▼
@@ -65,8 +65,7 @@ per ENV konfigurierbar, Default z. B. `/public` und `/admin`). Ob und wie der
 Admin-Pfad von außen abgeschnitten wird (kein Ingress-Rule, separates
 internes Service-Objekt, Firewall-Regel, VPN-only-Netz, Caddy-Proxy, der nur
 `/public/*` weiterleitet …) entscheidet die jeweilige Deployment-Umgebung.
-Die Referenz-Caddy-Config in `deploy/reference/caddy/` zeigt eine Variante
-davon, ist aber nur ein Beispiel.
+[DEPLOYMENT.md](DEPLOYMENT.md) beschreibt eine Variante davon als Beispiel.
 
 ## 2. Konfiguration (Umgebungsvariablen)
 
@@ -215,47 +214,26 @@ In-Memory-Cache mit kurzer TTL, falls EVCC-Calls spürbar werden.
   internal/config/      ENV-Parsing → Config-Struct, mit Defaults & Validierung
   internal/evcc/        EVCC-Client (sessions, vehicle-mode)
   internal/store/       bbolt-Zugriff (Friend, Admin, RateLimit)
-  internal/http/        Router, Public- und Admin-Handler
-  web/                  Vue-Frontend (eingebettet via go:embed)
+  internal/httpserver/  Router, Public- und Admin-Handler
+  web/                  Eigenständiges Vue-Frontend (Vite, eigenes package.json)
 schema/
   config.md             Vollständige ENV-Var-Referenz (generisch, Typen, Defaults)
-  (optional) config.schema.json   maschinenlesbares Schema derselben Variablen
-deploy/
-  reference/
-    caddy/
-      Caddyfile.example     Referenz: nur /public/* extern weiterleiten
-    k8s/
-      *.example.yaml        Referenz-Manifeste (Deployment, Service, Secret-Template)
 .env.example             Platzhalter für alle ENV-Vars
 .gitignore               .env, config.local.*, *.secrets.*
+Dockerfile               Multi-Stage-Build des Go-Binaries
+DEPLOYMENT.md            Betriebsdokumentation (kein Code/Manifeste)
 ```
 
 `schema/` dokumentiert, was zu bauen ist (Konfigurationsvertrag,
-API-Shape) unabhängig vom Deployment. `deploy/reference/*` sind
-austauschbare Beispiele — ein anderer Nutzer von Ladegast kann dort z. B.
-Nginx statt Caddy oder Docker Compose statt K8s hinterlegen, ohne den Kern
-anzufassen.
+API-Shape) unabhängig vom Deployment.
 
-## 9. Deployment — Referenz-Beispiel K8s/Caddy/Tailscale
+## 9. Deployment
 
-Nur als eine mögliche Instanziierung, nicht Teil der Kernarchitektur:
-
-- 1 Deployment `ladegast` (Go-Binary + embedded Vue-Build, ein Container),
-  ENV-Vars aus K8s-Secret (`LADEGAST_EVCC_API_KEY`,
-  `LADEGAST_SESSION_SECRET`, `LADEGAST_ADMIN_PASSWORD`, …) + ConfigMap
-  (restliche, nicht-geheime Werte).
-- 1 PVC für `LADEGAST_DATA_DIR` (z. B. Longhorn, mit restic-Backup — rein
-  Betriebsentscheidung des Nutzers).
-- 1 ClusterIP-Service.
-- Kein Ingress-Objekt für den Admin-Pfad an der externen Kante.
-- Beliebiger Reverse Proxy (hier beispielhaft Caddy auf einem externen
-  Host, per VPN erreichbar), der nur `LADEGAST_PUBLIC_PATH_PREFIX`
-  weiterleitet.
-- EVCC-Erreichbarkeit: beliebig, je Betriebsumgebung (gleicher Cluster,
-  gleiches Netz, VPN, …) — Ladegast braucht nur `LADEGAST_EVCC_BASE_URL`.
-
-Konkrete Beispiel-Dateien dazu liegen (mit Platzhaltern) in
-`deploy/reference/`, niemals mit echten Domains/Namen.
+Bewusst **nur dokumentiert**, nicht als Beispiel-Manifeste im Repo — siehe
+[DEPLOYMENT.md](DEPLOYMENT.md) für die Betriebsanleitung (Binary/Docker
+ausführen, benötigte ENV-Vars, Anforderungen an den Reverse Proxy, und ein
+beschriebenes, aber nicht eingechecktes Beispiel mit Kubernetes/Caddy/
+Tailscale).
 
 ## 10. Offene Punkte / Risiken
 
