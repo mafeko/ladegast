@@ -26,6 +26,24 @@ export class ApiError extends Error {
   }
 }
 
+// Backend error texts are English; users see German.
+const ERROR_MESSAGES: Record<string, string> = {
+  'invalid PIN': 'Falsche PIN.',
+  'invalid credentials': 'Benutzername oder Passwort falsch.',
+  'too many attempts, try again later': 'Zu viele Fehlversuche. Bitte später erneut versuchen.',
+  'not authenticated': 'Nicht angemeldet.',
+  'unknown link': 'Dieser Link ist ungültig.',
+  'friend not found': 'Freund nicht gefunden.',
+  'could not reach EVCC': 'EVCC ist nicht erreichbar.',
+  'could not set mode': 'Lademodus konnte nicht gesetzt werden.',
+  'invalid request body': 'Ungültige Eingabe.',
+  'mode must be smart or now': 'Ungültiger Lademodus.',
+  'name and vehicleName are required': 'Name und Fahrzeugname sind erforderlich.',
+  'pin must be 4 to 12 digits': 'Die PIN muss aus 4 bis 12 Ziffern bestehen.',
+  'rates must not be negative': 'Preise dürfen nicht negativ sein.',
+  'internal error': 'Interner Fehler.',
+}
+
 async function request<T>(method: string, url: string, body?: unknown): Promise<T> {
   const res = await fetch(url, {
     method,
@@ -34,10 +52,10 @@ async function request<T>(method: string, url: string, body?: unknown): Promise<
     body: body !== undefined ? JSON.stringify(body) : undefined,
   })
   if (!res.ok) {
-    let message = `request failed with status ${res.status}`
+    let message = `Anfrage fehlgeschlagen (Status ${res.status})`
     try {
       const data = (await res.json()) as { error?: string }
-      if (data.error) message = data.error
+      if (data.error) message = ERROR_MESSAGES[data.error] ?? data.error
     } catch {
       // response body wasn't JSON; keep the generic message
     }
@@ -99,8 +117,13 @@ export function regenerateLink(id: string): Promise<RegeneratedLink> {
   return request('POST', `${ADMIN_PREFIX}/friends/${id}/regenerate-link`, {})
 }
 
-export function resetPin(id: string): Promise<{ pin: string }> {
-  return request('POST', `${ADMIN_PREFIX}/friends/${id}/reset-pin`, {})
+// Without pin the server generates a random one.
+export function resetPin(id: string, pin?: string): Promise<{ pin: string }> {
+  return request('POST', `${ADMIN_PREFIX}/friends/${id}/reset-pin`, pin ? { pin } : {})
+}
+
+export function deleteFriend(id: string): Promise<void> {
+  return request('DELETE', `${ADMIN_PREFIX}/friends/${id}`)
 }
 
 export function viewAsDashboard(id: string): Promise<Dashboard> {

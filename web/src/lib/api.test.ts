@@ -29,7 +29,7 @@ describe('request error handling (via any endpoint)', () => {
     await expect(api.friendLogin('uuid-1', '000000')).rejects.toMatchObject({
       name: 'ApiError',
       status: 401,
-      message: 'invalid PIN',
+      message: 'Falsche PIN.',
     })
   })
 
@@ -43,7 +43,7 @@ describe('request error handling (via any endpoint)', () => {
     } as unknown as Response)
     vi.stubGlobal('fetch', fetchMock)
 
-    await expect(api.getFriendStatus('uuid-1')).rejects.toThrow('request failed with status 500')
+    await expect(api.getFriendStatus('uuid-1')).rejects.toThrow('Anfrage fehlgeschlagen (Status 500)')
   })
 
   it('returns undefined for a 204 No Content response', async () => {

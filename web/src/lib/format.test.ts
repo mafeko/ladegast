@@ -3,10 +3,10 @@ import { formatDateTime, formatEUR, formatKWh, solarSharePercent } from './forma
 
 describe('formatKWh', () => {
   it('formats with two decimals and a unit', () => {
-    expect(formatKWh(5.3119)).toBe('5.31 kWh')
+    expect(formatKWh(5.3119)).toBe('5,31 kWh')
   })
   it('formats zero', () => {
-    expect(formatKWh(0)).toBe('0.00 kWh')
+    expect(formatKWh(0)).toBe('0,00 kWh')
   })
 })
 

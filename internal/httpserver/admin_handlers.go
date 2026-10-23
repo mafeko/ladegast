@@ -1,6 +1,9 @@
 package httpserver
 
 import (
+	"encoding/json"
+	"errors"
+	"io"
 	"net/http"
 	"time"
 
@@ -10,7 +13,11 @@ import (
 	"github.com/mafeko/ladegast/internal/store"
 )
 
-const pinLength = 6
+const (
+	pinLength    = 6 // generated PINs
+	minPINLength = 4 // admin-chosen PINs
+	maxPINLength = 12
+)
 
 func (s *Server) registerAdminRoutes(mux *http.ServeMux) {
 	mux.HandleFunc("POST "+s.adminPath("/login"), s.handleAdminLogin)
@@ -18,6 +25,7 @@ func (s *Server) registerAdminRoutes(mux *http.ServeMux) {
 	mux.HandleFunc("GET "+s.adminPath("/friends"), s.requireAdmin(s.handleAdminListFriends))
 	mux.HandleFunc("POST "+s.adminPath("/friends"), s.requireAdmin(s.handleAdminCreateFriend))
 	mux.HandleFunc("PUT "+s.adminPath("/friends/{id}"), s.requireAdmin(s.handleAdminUpdateFriend))
+	mux.HandleFunc("DELETE "+s.adminPath("/friends/{id}"), s.requireAdmin(s.handleAdminDeleteFriend))
 	mux.HandleFunc("POST "+s.adminPath("/friends/{id}/regenerate-link"), s.requireAdmin(s.handleAdminRegenerateLink))
 	mux.HandleFunc("POST "+s.adminPath("/friends/{id}/reset-pin"), s.requireAdmin(s.handleAdminResetPIN))
 	mux.HandleFunc("GET "+s.adminPath("/friends/{id}/view-as/dashboard"), s.requireAdmin(s.handleAdminViewAsDashboard))
@@ -70,7 +78,68 @@ func (s *Server) handleAdminListFriends(w http.ResponseWriter, r *http.Request) 
 		writeError(w, http.StatusInternalServerError, "internal error")
 		return
 	}
-	writeJSON(w, http.StatusOK, friends)
+	views := make([]adminFriend, 0, len(friends))
+	for _, f := range friends {
+		views = append(views, s.adminFriendView(f))
+	}
+	writeJSON(w, http.StatusOK, views)
+}
+
+// adminFriend is the admin API's view of a friend: everything the admin UI
+// needs, including the shareable link, but never the PIN hash.
+type adminFriend struct {
+	ID                string    `json:"id"`
+	Name              string    `json:"name"`
+	VehicleName       string    `json:"vehicleName"`
+	RateSolarPerKWh   float64   `json:"rateSolarPerKWh"`
+	RateGridPerKWh    float64   `json:"rateGridPerKWh"`
+	CreatedAt         time.Time `json:"createdAt"`
+	LinkRegeneratedAt time.Time `json:"linkRegeneratedAt"`
+	Link              string    `json:"link"`
+}
+
+func (s *Server) adminFriendView(f store.Friend) adminFriend {
+	return adminFriend{
+		ID:                f.ID,
+		Name:              f.Name,
+		VehicleName:       f.VehicleName,
+		RateSolarPerKWh:   f.RateSolarPerKWh,
+		RateGridPerKWh:    f.RateGridPerKWh,
+		CreatedAt:         f.CreatedAt,
+		LinkRegeneratedAt: f.LinkRegeneratedAt,
+		Link:              s.friendLink(f.ID),
+	}
+}
+
+func (s *Server) friendLink(id string) string {
+	return s.cfg.PublicBaseURL + s.publicPath("/l/"+id)
+}
+
+// validPIN reports whether pin is an acceptable admin-chosen PIN: only
+// digits, between minPINLength and maxPINLength long.
+func validPIN(pin string) bool {
+	if len(pin) < minPINLength || len(pin) > maxPINLength {
+		return false
+	}
+	for _, c := range pin {
+		if c < '0' || c > '9' {
+			return false
+		}
+	}
+	return true
+}
+
+// pinOrGenerate returns the admin-chosen PIN, or a random one if none was
+// given. ok is false (and the response already written) for an invalid PIN.
+func pinOrGenerate(w http.ResponseWriter, chosen string) (pin string, ok bool) {
+	if chosen == "" {
+		return idgen.PIN(pinLength), true
+	}
+	if !validPIN(chosen) {
+		writeError(w, http.StatusBadRequest, "pin must be 4 to 12 digits")
+		return "", false
+	}
+	return chosen, true
 }
 
 type createFriendRequest struct {
@@ -78,6 +147,12 @@ type createFriendRequest struct {
 	VehicleName     string  `json:"vehicleName"`
 	RateSolarPerKWh float64 `json:"rateSolarPerKWh"`
 	RateGridPerKWh  float64 `json:"rateGridPerKWh"`
+	// PIN is optional: on create an empty value means "generate one".
+	PIN string `json:"pin"`
+}
+
+func validRates(b createFriendRequest) bool {
+	return b.RateSolarPerKWh >= 0 && b.RateGridPerKWh >= 0
 }
 
 func (s *Server) handleAdminCreateFriend(w http.ResponseWriter, r *http.Request) {
@@ -90,7 +165,14 @@ func (s *Server) handleAdminCreateFriend(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	pin := idgen.PIN(pinLength)
+	if !validRates(body) {
+		writeError(w, http.StatusBadRequest, "rates must not be negative")
+		return
+	}
+	pin, ok := pinOrGenerate(w, body.PIN)
+	if !ok {
+		return
+	}
 	hash, err := bcrypt.GenerateFromPassword([]byte(pin), bcrypt.DefaultCost)
 	if err != nil {
 		writeError(w, http.StatusInternalServerError, "internal error")
@@ -115,7 +197,7 @@ func (s *Server) handleAdminCreateFriend(w http.ResponseWriter, r *http.Request)
 	writeJSON(w, http.StatusCreated, map[string]string{
 		"id":   friend.ID,
 		"pin":  pin,
-		"link": s.cfg.PublicBaseURL + s.publicPath("/l/"+friend.ID),
+		"link": s.friendLink(friend.ID),
 	})
 }
 
@@ -131,6 +213,10 @@ func (s *Server) handleAdminUpdateFriend(w http.ResponseWriter, r *http.Request)
 	if !decodeJSON(w, r, &body) {
 		return
 	}
+	if !validRates(body) {
+		writeError(w, http.StatusBadRequest, "rates must not be negative")
+		return
+	}
 	if body.Name != "" {
 		friend.Name = body.Name
 	}
@@ -144,7 +230,21 @@ func (s *Server) handleAdminUpdateFriend(w http.ResponseWriter, r *http.Request)
 		writeError(w, http.StatusInternalServerError, "internal error")
 		return
 	}
-	writeJSON(w, http.StatusOK, friend)
+	writeJSON(w, http.StatusOK, s.adminFriendView(friend))
+}
+
+// handleAdminDeleteFriend removes a friend; their link and any session
+// cookie stop working immediately because requireFriend looks the friend up.
+func (s *Server) handleAdminDeleteFriend(w http.ResponseWriter, r *http.Request) {
+	if err := s.store.DeleteFriend(r.PathValue("id")); err != nil {
+		if errors.Is(err, store.ErrNotFound) {
+			writeError(w, http.StatusNotFound, "friend not found")
+			return
+		}
+		writeError(w, http.StatusInternalServerError, "internal error")
+		return
+	}
+	w.WriteHeader(http.StatusNoContent)
 }
 
 // handleAdminRegenerateLink invalidates a friend's current link by moving
@@ -171,7 +271,7 @@ func (s *Server) handleAdminRegenerateLink(w http.ResponseWriter, r *http.Reques
 
 	writeJSON(w, http.StatusOK, map[string]string{
 		"id":   friend.ID,
-		"link": s.cfg.PublicBaseURL + s.publicPath("/l/"+friend.ID),
+		"link": s.friendLink(friend.ID),
 	})
 }
 
@@ -183,7 +283,19 @@ func (s *Server) handleAdminResetPIN(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	pin := idgen.PIN(pinLength)
+	// The body is optional: {"pin": "..."} sets a chosen PIN, anything else
+	// (no body, null, {}) generates a random one.
+	var body struct {
+		PIN string `json:"pin"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil && !errors.Is(err, io.EOF) {
+		writeError(w, http.StatusBadRequest, "invalid request body")
+		return
+	}
+	pin, ok := pinOrGenerate(w, body.PIN)
+	if !ok {
+		return
+	}
 	hash, err := bcrypt.GenerateFromPassword([]byte(pin), bcrypt.DefaultCost)
 	if err != nil {
 		writeError(w, http.StatusInternalServerError, "internal error")

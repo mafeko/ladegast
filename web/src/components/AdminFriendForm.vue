@@ -9,6 +9,7 @@ const name = ref('')
 const vehicleName = ref('')
 const rateSolarPerKWh = ref(0.1)
 const rateGridPerKWh = ref(0.35)
+const pin = ref('')
 const error = ref('')
 const submitting = ref(false)
 
@@ -21,10 +22,12 @@ async function onSubmit() {
       vehicleName: vehicleName.value,
       rateSolarPerKWh: rateSolarPerKWh.value,
       rateGridPerKWh: rateGridPerKWh.value,
+      pin: pin.value || undefined,
     })
     emit('created', created)
     name.value = ''
     vehicleName.value = ''
+    pin.value = ''
   } catch (e) {
     error.value = e instanceof Error ? e.message : 'Anlegen fehlgeschlagen'
   } finally {
@@ -75,6 +78,20 @@ async function onSubmit() {
           step="0.01"
           min="0"
           required
+          class="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:border-gray-700 dark:bg-gray-950"
+        />
+      </div>
+      <div class="sm:col-span-2">
+        <label for="pin" class="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">PIN (optional)</label>
+        <input
+          id="pin"
+          v-model="pin"
+          inputmode="numeric"
+          pattern="[0-9]{4,12}"
+          maxlength="12"
+          autocomplete="off"
+          placeholder="Leer lassen für eine zufällige 6-stellige PIN"
+          title="4 bis 12 Ziffern"
           class="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:border-gray-700 dark:bg-gray-950"
         />
       </div>

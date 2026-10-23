@@ -37,6 +37,18 @@ describe('AdminFriendForm', () => {
 
     expect(wrapper.text()).toContain('name and vehicleName are required')
   })
+  it('sends an optional chosen PIN', async () => {
+    vi.mocked(api.createFriend).mockResolvedValue({ id: '1', pin: '2468', link: 'http://x/l/1' })
+    const wrapper = mount(AdminFriendForm)
+
+    await wrapper.find('#name').setValue('Bea')
+    await wrapper.find('#vehicleName').setValue('vehicle_2')
+    await wrapper.find('#pin').setValue('2468')
+    await wrapper.find('form').trigger('submit.prevent')
+    await new Promise((resolve) => setTimeout(resolve, 0))
+
+    expect(api.createFriend).toHaveBeenCalledWith(expect.objectContaining({ pin: '2468' }))
+  })
 })
 
 async function flushMicrotasks() {

@@ -43,6 +43,7 @@ export interface Friend {
   rateGridPerKWh: number
   createdAt: string
   linkRegeneratedAt: string
+  link: string
 }
 
 export interface CreateFriendInput {
@@ -50,6 +51,8 @@ export interface CreateFriendInput {
   vehicleName: string
   rateSolarPerKWh: number
   rateGridPerKWh: number
+  /** Optional chosen PIN (4-12 digits); the server generates one if omitted. */
+  pin?: string
 }
 
 export interface CreatedFriend {

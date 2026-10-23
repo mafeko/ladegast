@@ -17,6 +17,19 @@ describe('ModeSwitch', () => {
     expect(wrapper.emitted('changed')).toEqual([['now']])
   })
 
+  it('marks the chosen mode as active and confirms it', async () => {
+    vi.mocked(api.setMode).mockResolvedValue({ mode: 'now' })
+    const wrapper = mount(ModeSwitch, { props: { uuid: 'abc' } })
+    const buttons = () => wrapper.findAll('button')
+    expect(buttons().map((b) => b.attributes('aria-pressed'))).toEqual(['false', 'false'])
+
+    await buttons()[1].trigger('click')
+    await flushMicrotasks()
+
+    expect(buttons().map((b) => b.attributes('aria-pressed'))).toEqual(['false', 'true'])
+    expect(wrapper.text()).toContain('Modus gesetzt: Schnellladen')
+  })
+
   it('shows an error message when the switch fails', async () => {
     vi.mocked(api.setMode).mockRejectedValue(new Error('could not set mode'))
     const wrapper = mount(ModeSwitch, { props: { uuid: 'abc' } })
