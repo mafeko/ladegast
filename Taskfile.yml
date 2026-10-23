@@ -42,6 +42,16 @@ tasks:
       - go tool cover -html=coverage.out -o coverage.html
       - echo "Report written to coverage.html"
 
+  evcc:mock:
+    desc: Run the mock EVCC (data from dev/evcc-mock.yaml) on :7070 for local demos
+    cmds:
+      - go run ./cmd/evccmock -config dev/evcc-mock.yaml
+
+  evcc:mock:generate:
+    desc: Regenerate dev/evcc-mock.yaml (3 users, 12 months of sessions up to now)
+    cmds:
+      - go run ./cmd/evccmock generate -out dev/evcc-mock.yaml
+
   fmt:
     desc: Format all Go source files
     cmds:

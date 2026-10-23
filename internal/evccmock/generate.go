@@ -1,0 +1,176 @@
+package evccmock
+
+import (
+	"fmt"
+	"io"
+	"math"
+	"math/rand"
+	"time"
+)
+
+// profile describes how one user charges. Weights are per-weekday
+// probabilities (Mon..Sun) of a charging session on that day, so their sum
+// is roughly the sessions per week.
+type profile struct {
+	name, vehicleName, title, loadpoint string
+	capacityKWh                         float64
+	weekday                             [7]float64
+	startHour                           [2]float64 // earliest/latest start (local hours)
+	energy                              [2]float64 // kWh per session
+	powersKW                            []float64  // wallbox power candidates
+	eveningShare                        float64    // share of sessions after work (little solar)
+	// gaps are [from,to) day offsets counted back from today in which the
+	// vehicle is not charged (holiday, car in the garage, ...).
+	gaps [][2]int
+}
+
+var profiles = []profile{
+	{
+		name: "Anna", vehicleName: "vehicle_1", title: "Kompakt-SUV", loadpoint: "Garage",
+		capacityKWh: 64,
+		weekday:     [7]float64{0.55, 0.45, 0.5, 0.45, 0.4, 0.25, 0.1},
+		startHour:   [2]float64{9, 14}, energy: [2]float64{8, 28},
+		powersKW: []float64{7.4, 11}, eveningShare: 0.12,
+		gaps: [][2]int{{255, 241}, {140, 119}, {33, 28}},
+	},
+	{
+		name: "Ben", vehicleName: "vehicle_2", title: "Kombi", loadpoint: "Garage",
+		capacityKWh: 77,
+		weekday:     [7]float64{0.1, 0.1, 0.15, 0.1, 0.2, 0.6, 0.55},
+		startHour:   [2]float64{10, 15}, energy: [2]float64{15, 45},
+		powersKW: []float64{7.4, 11}, eveningShare: 0.15,
+		gaps: [][2]int{{200, 172}, {85, 79}},
+	},
+	{
+		name: "Clara", vehicleName: "vehicle_3", title: "Stadtflitzer", loadpoint: "Carport",
+		capacityKWh: 42,
+		weekday:     [7]float64{0.15, 0.3, 0.1, 0.3, 0.15, 0.3, 0.15},
+		startHour:   [2]float64{10, 16}, energy: [2]float64{5, 20},
+		powersKW: []float64{3.7, 7.4}, eveningShare: 0.08,
+		gaps: [][2]int{{330, 316}, {300, 290}, {120, 90}, {18, 11}},
+	},
+}
+
+const (
+	solarPrice = 0.10 // EVCC-side tariff, only informational
+	gridPrice  = 0.32
+)
+
+// Generate builds the demo data set: three users with one vehicle each and
+// twelve months of sessions up to now. The same seed always yields the same
+// data (relative to now), so the committed YAML is reproducible.
+func Generate(now time.Time, seed int64) Config {
+	loc, _ := time.LoadLocation("Europe/Berlin")
+	now = now.In(loc)
+	rng := rand.New(rand.NewSource(seed))
+
+	cfg := Config{
+		Listen:        ":7070",
+		APIKey:        "evcc_mock_key",
+		Timezone:      "Europe/Berlin",
+		ReferenceTime: now.Truncate(time.Second),
+		RebaseToNow:   true,
+	}
+	today := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, loc)
+	for _, p := range profiles {
+		v := Vehicle{Name: p.vehicleName, Title: p.title, CapacityKWh: p.capacityKWh, Loadpoint: p.loadpoint, Mode: "pv"}
+		for off := 364; off >= 0; off-- {
+			day := today.AddDate(0, 0, -off)
+			if inGap(p.gaps, off) || rng.Float64() >= p.weekday[(int(day.Weekday())+6)%7] {
+				continue
+			}
+			s := genSession(rng, p, day)
+			if s.Finished.After(now) {
+				continue
+			}
+			v.Sessions = append(v.Sessions, s)
+		}
+		cfg.Users = append(cfg.Users, User{Name: p.name, Vehicle: v})
+	}
+	return cfg
+}
+
+func inGap(gaps [][2]int, off int) bool {
+	for _, g := range gaps {
+		if off <= g[0] && off > g[1] {
+			return true
+		}
+	}
+	return false
+}
+
+func genSession(rng *rand.Rand, p profile, day time.Time) SessionEntry {
+	evening := rng.Float64() < p.eveningShare
+	hour := p.startHour[0] + rng.Float64()*(p.startHour[1]-p.startHour[0])
+	if evening {
+		hour = 17.5 + rng.Float64()*3
+	}
+	start := day.Add(time.Duration(hour * float64(time.Hour))).Round(time.Minute)
+
+	energy := math.Round((p.energy[0]+rng.Float64()*(p.energy[1]-p.energy[0]))*100) / 100
+	power := p.powersKW[rng.Intn(len(p.powersKW))]
+	hours := energy/power*1.06 + 0.1
+	finished := start.Add(time.Duration(hours * float64(time.Hour))).Round(time.Minute)
+
+	// Seasonal solar share: peak at the summer solstice, still >50 % in
+	// winter on average because the wallbox is mostly used at midday.
+	doy := float64(day.YearDay())
+	sun := 0.5 + 0.5*math.Cos(2*math.Pi*(doy-172)/365)
+	solar := 62 + 35*sun + rng.NormFloat64()*8
+	if power <= 3.7 {
+		solar += 5 // slow charging tracks PV surplus better
+	}
+	if evening {
+		solar = 3 + rng.Float64()*25
+	}
+	solar = math.Round(math.Min(99, math.Max(0, solar)))
+
+	perKWh := solarPrice*solar/100 + gridPrice*(1-solar/100)
+	return SessionEntry{
+		Created:         start,
+		Finished:        finished,
+		ChargedEnergy:   energy,
+		SolarPercentage: solar,
+		Price:           math.Round(energy*perKWh*100) / 100,
+		PricePerKWh:     math.Round(perKWh*1000) / 1000,
+	}
+}
+
+// WriteYAML renders cfg in the file format LoadConfig expects, with one
+// compact line per session so the file stays reviewable.
+func WriteYAML(w io.Writer, cfg Config) error {
+	ew := &errWriter{w: w}
+	ew.printf("# Mock-EVCC data for local development and end-to-end demos.\n")
+	ew.printf("# Generated by `evccmock generate` (reference time below); edit freely.\n")
+	ew.printf("# Fields per session mirror EVCC's /api/sessions: chargedEnergy in kWh,\n")
+	ew.printf("# price/pricePerKWh from EVCC's own tariff (Ladegast ignores them).\n\n")
+	ew.printf("listen: %q\n", cfg.Listen)
+	ew.printf("apiKey: %q            # Bearer token; empty disables auth\n", cfg.APIKey)
+	ew.printf("timezone: %s\n", cfg.Timezone)
+	ew.printf("referenceTime: %s\n", cfg.ReferenceTime.Format(time.RFC3339))
+	ew.printf("# Shift all timestamps by whole weeks so the data ends right before server start.\n")
+	ew.printf("rebaseToNow: %t\n\n", cfg.RebaseToNow)
+	ew.printf("users:\n")
+	for _, u := range cfg.Users {
+		v := u.Vehicle
+		ew.printf("  - name: %s\n    vehicle:\n", u.Name)
+		ew.printf("      name: %s\n      title: %q\n      capacityKWh: %g\n      loadpoint: %s\n      mode: %s\n", v.Name, v.Title, v.CapacityKWh, v.Loadpoint, v.Mode)
+		ew.printf("      sessions:\n")
+		for _, s := range v.Sessions {
+			ew.printf("        - {created: %s, finished: %s, chargedEnergy: %.2f, solarPercentage: %.0f, price: %.2f, pricePerKWh: %.3f}\n",
+				s.Created.Format(time.RFC3339), s.Finished.Format(time.RFC3339), s.ChargedEnergy, s.SolarPercentage, s.Price, s.PricePerKWh)
+		}
+	}
+	return ew.err
+}
+
+type errWriter struct {
+	w   io.Writer
+	err error
+}
+
+func (e *errWriter) printf(format string, a ...any) {
+	if e.err == nil {
+		_, e.err = fmt.Fprintf(e.w, format, a...)
+	}
+}
