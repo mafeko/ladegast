@@ -34,16 +34,60 @@ async function onSubmit() {
 </script>
 
 <template>
-  <form @submit.prevent="onSubmit">
-    <label for="name">Name</label>
-    <input id="name" v-model="name" required />
-    <label for="vehicleName">EVCC-Fahrzeugname</label>
-    <input id="vehicleName" v-model="vehicleName" required />
-    <label for="rateSolar">Preis Sonne (EUR/kWh)</label>
-    <input id="rateSolar" v-model.number="rateSolarPerKWh" type="number" step="0.01" min="0" required />
-    <label for="rateGrid">Preis Netz (EUR/kWh)</label>
-    <input id="rateGrid" v-model.number="rateGridPerKWh" type="number" step="0.01" min="0" required />
-    <button type="submit" :disabled="submitting">Freund anlegen</button>
-    <p v-if="error" role="alert">{{ error }}</p>
+  <form class="space-y-4" @submit.prevent="onSubmit">
+    <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+      <div>
+        <label for="name" class="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">Name</label>
+        <input
+          id="name"
+          v-model="name"
+          required
+          class="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:border-gray-700 dark:bg-gray-950"
+        />
+      </div>
+      <div>
+        <label for="vehicleName" class="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">EVCC-Fahrzeugname</label>
+        <input
+          id="vehicleName"
+          v-model="vehicleName"
+          required
+          class="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:border-gray-700 dark:bg-gray-950"
+        />
+      </div>
+      <div>
+        <label for="rateSolar" class="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">Preis Sonne (EUR/kWh)</label>
+        <input
+          id="rateSolar"
+          v-model.number="rateSolarPerKWh"
+          type="number"
+          step="0.01"
+          min="0"
+          required
+          class="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:border-gray-700 dark:bg-gray-950"
+        />
+      </div>
+      <div>
+        <label for="rateGrid" class="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">Preis Netz (EUR/kWh)</label>
+        <input
+          id="rateGrid"
+          v-model.number="rateGridPerKWh"
+          type="number"
+          step="0.01"
+          min="0"
+          required
+          class="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:border-gray-700 dark:bg-gray-950"
+        />
+      </div>
+    </div>
+    <button
+      type="submit"
+      :disabled="submitting"
+      class="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-indigo-500 disabled:cursor-not-allowed disabled:opacity-50"
+    >
+      Freund anlegen
+    </button>
+    <p v-if="error" role="alert" class="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-600 dark:bg-red-950/40 dark:text-red-400">
+      {{ error }}
+    </p>
   </form>
 </template>

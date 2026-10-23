@@ -50,22 +50,60 @@ async function onResetPin() {
 </script>
 
 <template>
-  <tr>
-    <td>{{ friend.name }}</td>
-    <td>{{ friend.vehicleName }}</td>
-    <td><input v-model.number="rateSolarPerKWh" type="number" step="0.01" min="0" /></td>
-    <td><input v-model.number="rateGridPerKWh" type="number" step="0.01" min="0" /></td>
-    <td>
-      <button type="button" @click="saveRates">Speichern</button>
-      <button type="button" @click="onRegenerateLink">Link neu</button>
-      <button type="button" @click="onResetPin">PIN zurücksetzen</button>
-      <RouterLink :to="`/admin/view-as/${friend.id}`">Ansehen als</RouterLink>
+  <tr class="border-b border-gray-100 last:border-0 dark:border-gray-800">
+    <td class="px-3 py-2 font-medium">{{ friend.name }}</td>
+    <td class="px-3 py-2 text-gray-500 dark:text-gray-400">{{ friend.vehicleName }}</td>
+    <td class="px-3 py-2">
+      <input
+        v-model.number="rateSolarPerKWh"
+        type="number"
+        step="0.01"
+        min="0"
+        class="w-24 rounded-lg border border-gray-300 bg-white px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:border-gray-700 dark:bg-gray-950"
+      />
+    </td>
+    <td class="px-3 py-2">
+      <input
+        v-model.number="rateGridPerKWh"
+        type="number"
+        step="0.01"
+        min="0"
+        class="w-24 rounded-lg border border-gray-300 bg-white px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:border-gray-700 dark:bg-gray-950"
+      />
+    </td>
+    <td class="space-x-2 px-3 py-2 whitespace-nowrap">
+      <button
+        type="button"
+        class="rounded-lg bg-indigo-600 px-3 py-1.5 text-xs font-medium text-white transition hover:bg-indigo-500"
+        @click="saveRates"
+      >
+        Speichern
+      </button>
+      <button
+        type="button"
+        class="rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-xs font-medium text-gray-700 transition hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 dark:hover:bg-gray-800"
+        @click="onRegenerateLink"
+      >
+        Link neu
+      </button>
+      <button
+        type="button"
+        class="rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-xs font-medium text-gray-700 transition hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 dark:hover:bg-gray-800"
+        @click="onResetPin"
+      >
+        PIN zurücksetzen
+      </button>
+      <RouterLink :to="`/admin/view-as/${friend.id}`" class="text-xs font-medium text-indigo-600 hover:underline dark:text-indigo-400">
+        Ansehen als
+      </RouterLink>
     </td>
   </tr>
   <tr v-if="message || error">
-    <td colspan="5">
-      <p v-if="message">{{ message }}</p>
-      <p v-if="error" role="alert">{{ error }}</p>
+    <td colspan="5" class="px-3 pb-3">
+      <p v-if="message" class="text-sm text-gray-500 dark:text-gray-400">{{ message }}</p>
+      <p v-if="error" role="alert" class="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-600 dark:bg-red-950/40 dark:text-red-400">
+        {{ error }}
+      </p>
     </td>
   </tr>
 </template>

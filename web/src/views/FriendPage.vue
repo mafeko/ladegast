@@ -36,8 +36,8 @@ onMounted(checkStatus)
 
 <template>
   <main>
-    <p v-if="checking">Lade...</p>
-    <p v-else-if="notFound">Dieser Link ist ungültig.</p>
+    <div v-if="checking" class="flex min-h-screen items-center justify-center text-sm text-gray-500 dark:text-gray-400">Lade...</div>
+    <div v-else-if="notFound" class="flex min-h-screen items-center justify-center text-sm text-gray-600 dark:text-gray-300">Dieser Link ist ungültig.</div>
     <FriendDashboard v-else-if="authenticated" :uuid="props.uuid" @logged-out="onLoggedOut" />
     <FriendLogin v-else :uuid="props.uuid" @success="onLoginSuccess" />
   </main>

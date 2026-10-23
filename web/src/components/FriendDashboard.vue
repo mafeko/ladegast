@@ -38,18 +38,36 @@ defineExpose({ load })
 </script>
 
 <template>
-  <div>
-    <button type="button" @click="logout">Abmelden</button>
-    <p v-if="loading">Lade...</p>
-    <p v-else-if="error" role="alert">{{ error }}</p>
+  <div class="mx-auto max-w-5xl px-4 py-10">
+    <div class="mb-8 flex items-center justify-between gap-4">
+      <h1 class="text-2xl font-semibold tracking-tight">
+        {{ dashboard ? `Hallo ${dashboard.friend.name}` : 'Ladegast' }}
+      </h1>
+      <button
+        type="button"
+        class="rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 dark:hover:bg-gray-800"
+        @click="logout"
+      >
+        Abmelden
+      </button>
+    </div>
+    <p v-if="loading" class="text-sm text-gray-500 dark:text-gray-400">Lade...</p>
+    <p v-else-if="error" role="alert" class="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-600 dark:bg-red-950/40 dark:text-red-400">
+      {{ error }}
+    </p>
     <template v-else-if="dashboard">
-      <h2>Hallo {{ dashboard.friend.name }}</h2>
-      <ModeSwitch :uuid="props.uuid" @changed="load" />
-      <SummaryCard title="Heute" :summary="dashboard.today" />
-      <SummaryCard title="Diese Woche" :summary="dashboard.thisWeek" />
-      <SummaryCard title="Dieser Monat" :summary="dashboard.thisMonth" />
-      <SummaryCard title="Dieses Jahr" :summary="dashboard.thisYear" />
-      <SessionTable :sessions="sessions" />
+      <div class="mb-6 rounded-2xl border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-800 dark:bg-gray-900">
+        <ModeSwitch :uuid="props.uuid" @changed="load" />
+      </div>
+      <div class="mb-6 grid grid-cols-2 gap-4 sm:grid-cols-4">
+        <SummaryCard title="Heute" :summary="dashboard.today" />
+        <SummaryCard title="Diese Woche" :summary="dashboard.thisWeek" />
+        <SummaryCard title="Dieser Monat" :summary="dashboard.thisMonth" />
+        <SummaryCard title="Dieses Jahr" :summary="dashboard.thisYear" />
+      </div>
+      <div class="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-800 dark:bg-gray-900">
+        <SessionTable :sessions="sessions" />
+      </div>
     </template>
   </div>
 </template>
