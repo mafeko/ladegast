@@ -8,12 +8,14 @@ vars:
 
 tasks:
   build:
-    desc: Build the ladegast binary into ./bin
+    desc: Build the ladegast binary (frontend embedded) into ./bin
+    deps: [web:build]
     cmds:
       - go build -o bin/{{.BIN}} .
 
   run:
-    desc: Run ladegast locally (reads .env via dotenv)
+    desc: Run ladegast locally with the real frontend embedded (reads .env via dotenv)
+    deps: [web:build]
     cmds:
       - go run .
 
@@ -34,10 +36,11 @@ tasks:
       - go tool cover -func=coverage.out
 
   coverage:html:
-    desc: Run tests with coverage and open an HTML report
+    desc: Run tests with coverage and write an HTML report to coverage.html
     cmds:
       - go test ./... -coverprofile=coverage.out -covermode=atomic
-      - go tool cover -html=coverage.out
+      - go tool cover -html=coverage.out -o coverage.html
+      - echo "Report written to coverage.html"
 
   fmt:
     desc: Format all Go source files
@@ -75,7 +78,7 @@ tasks:
   clean:
     desc: Remove build artifacts and local data
     cmds:
-      - rm -rf bin coverage.out
+      - rm -rf bin coverage.out coverage.html
 
   web:install:
     desc: Install frontend dependencies
