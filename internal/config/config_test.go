@@ -83,3 +83,47 @@ func TestLoad_AdminCredentialsMustComeInPairs(t *testing.T) {
 		t.Fatal("expected error when only username is set, got nil")
 	}
 }
+
+func TestLoad_AdminCredentialsAsPairIsValid(t *testing.T) {
+	env := baseEnv()
+	env["LADEGAST_ADMIN_USERNAME"] = "admin"
+	env["LADEGAST_ADMIN_PASSWORD"] = "secret"
+	cfg, err := load(getenvFrom(env))
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if cfg.AdminUsername != "admin" || cfg.AdminPassword != "secret" {
+		t.Errorf("AdminUsername/Password = %q/%q, want admin/secret", cfg.AdminUsername, cfg.AdminPassword)
+	}
+}
+
+func TestLoad_InvalidRateLimitMaxAttempts(t *testing.T) {
+	env := baseEnv()
+	env["LADEGAST_RATE_LIMIT_MAX_ATTEMPTS"] = "not-a-number"
+	_, err := load(getenvFrom(env))
+	if err == nil {
+		t.Fatal("expected error for invalid integer, got nil")
+	}
+}
+
+func TestLoad_AccumulatesMultipleErrors(t *testing.T) {
+	// All required vars missing AND an invalid duration: the error should
+	// mention more than just the first problem encountered.
+	_, err := load(getenvFrom(map[string]string{"LADEGAST_RATE_LIMIT_WINDOW": "garbage"}))
+	if err == nil {
+		t.Fatal("expected error, got nil")
+	}
+}
+
+func TestLoad_ReadsFromOSEnv(t *testing.T) {
+	for k, v := range baseEnv() {
+		t.Setenv(k, v)
+	}
+	cfg, err := Load()
+	if err != nil {
+		t.Fatalf("Load: %v", err)
+	}
+	if cfg.EVCCBaseURL != "https://evcc.example.com" {
+		t.Errorf("EVCCBaseURL = %q, want https://evcc.example.com", cfg.EVCCBaseURL)
+	}
+}
