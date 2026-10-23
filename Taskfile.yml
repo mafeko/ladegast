@@ -1,0 +1,78 @@
+version: "3"
+
+dotenv: [".env"]
+
+vars:
+  BIN: ladegast
+  IMAGE: ladegast:dev
+
+tasks:
+  build:
+    desc: Build the ladegast binary into ./bin
+    cmds:
+      - go build -o bin/{{.BIN}} .
+
+  run:
+    desc: Run ladegast locally (reads .env via dotenv)
+    cmds:
+      - go run .
+
+  test:
+    desc: Run the full test suite
+    cmds:
+      - go test ./...
+
+  test:verbose:
+    desc: Run tests with verbose output
+    cmds:
+      - go test ./... -v
+
+  coverage:
+    desc: Run tests with coverage and print a per-function summary
+    cmds:
+      - go test ./... -coverprofile=coverage.out -covermode=atomic
+      - go tool cover -func=coverage.out
+
+  coverage:html:
+    desc: Run tests with coverage and open an HTML report
+    cmds:
+      - go test ./... -coverprofile=coverage.out -covermode=atomic
+      - go tool cover -html=coverage.out
+
+  fmt:
+    desc: Format all Go source files
+    cmds:
+      - gofmt -l -w .
+
+  vet:
+    desc: Run go vet
+    cmds:
+      - go vet ./...
+
+  tidy:
+    desc: Sync go.mod/go.sum with imports in use
+    cmds:
+      - go mod tidy
+
+  check:
+    desc: Format, vet and test - run before committing
+    cmds:
+      - task: fmt
+      - task: vet
+      - task: test
+
+  docker:build:
+    desc: Build the Docker image
+    cmds:
+      - docker build -t {{.IMAGE}} .
+
+  docker:run:
+    desc: Run the Docker image locally (reads .env)
+    deps: [docker:build]
+    cmds:
+      - docker run --rm -p 8080:8080 --env-file .env {{.IMAGE}}
+
+  clean:
+    desc: Remove build artifacts and local data
+    cmds:
+      - rm -rf bin coverage.out
