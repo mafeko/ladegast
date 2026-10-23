@@ -57,6 +57,16 @@ func (s *Store) GetFriend(id string) (Friend, error) {
 	return f, err
 }
 
+func (s *Store) DeleteFriend(id string) error {
+	return s.db.Update(func(tx *bolt.Tx) error {
+		b := tx.Bucket([]byte(bucketFriends))
+		if b.Get([]byte(id)) == nil {
+			return ErrNotFound
+		}
+		return b.Delete([]byte(id))
+	})
+}
+
 func (s *Store) ListFriends() ([]Friend, error) {
 	var out []Friend
 	err := s.db.View(func(tx *bolt.Tx) error {
