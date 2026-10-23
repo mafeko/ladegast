@@ -1,14 +1,13 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue'
 import { viewAsDashboard, viewAsSessions } from '../lib/api'
-import type { Dashboard, SessionView } from '../lib/types'
+import type { Dashboard } from '../lib/types'
 import SummaryCard from '../components/SummaryCard.vue'
-import SessionTable from '../components/SessionTable.vue'
+import UsageExplorer from '../components/UsageExplorer.vue'
 
 const props = defineProps<{ id: string }>()
 
 const dashboard = ref<Dashboard | null>(null)
-const sessions = ref<SessionView[]>([])
 const error = ref('')
 const loading = ref(true)
 
@@ -17,7 +16,6 @@ async function load() {
   error.value = ''
   try {
     dashboard.value = await viewAsDashboard(props.id)
-    sessions.value = await viewAsSessions(props.id)
   } catch (e) {
     error.value = e instanceof Error ? e.message : 'Laden fehlgeschlagen'
   } finally {
@@ -45,9 +43,7 @@ onMounted(load)
         <SummaryCard title="Dieser Monat" :summary="dashboard.thisMonth" />
         <SummaryCard title="Dieses Jahr" :summary="dashboard.thisYear" />
       </div>
-      <div class="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-800 dark:bg-gray-900">
-        <SessionTable :sessions="sessions" />
-      </div>
+      <UsageExplorer :cache-key="`admin:${props.id}`" :load="() => viewAsSessions(props.id)" />
     </template>
   </main>
 </template>

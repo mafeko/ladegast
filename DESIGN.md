@@ -182,7 +182,7 @@ GET  /public/l/{uuid}/status        { authenticated } - nicht 404 nur, wenn uuid
 POST /public/l/{uuid}/login         { pin } → Cookie
 POST /public/l/{uuid}/logout
 GET  /public/l/{uuid}/dashboard     Übersicht (Tag/Woche/Monat/Jahr)
-GET  /public/l/{uuid}/sessions      Session-Liste + Kosten
+GET  /public/l/{uuid}/sessions      komplette Session-Historie + Kosten (das Frontend cached sie und filtert nach Zeitraum lokal)
 POST /public/l/{uuid}/mode          { mode: "smart"|"now" }
 ```
 
@@ -191,10 +191,11 @@ POST /public/l/{uuid}/mode          { mode: "smart"|"now" }
 POST   /admin/login
 POST   /admin/logout
 GET    /admin/friends
-POST   /admin/friends                        neuen Freund anlegen (generiert UUID+PIN)
+POST   /admin/friends                        neuen Freund anlegen (generiert UUID; PIN optional vorgebbar, sonst zufällig)
 PUT    /admin/friends/{id}                   Tarife/Name/Fahrzeug ändern
+DELETE /admin/friends/{id}                   Freund löschen (Link und PIN sofort ungültig)
 POST   /admin/friends/{id}/regenerate-link   neue UUID, alte ungültig
-POST   /admin/friends/{id}/reset-pin         neue PIN setzen/anzeigen
+POST   /admin/friends/{id}/reset-pin         neue PIN setzen ({pin} optional, 4-12 Ziffern; sonst zufällig)
 GET    /admin/friends/{id}/view-as/dashboard  identisch zu .../l/{uuid}/dashboard, ohne PIN
 GET    /admin/friends/{id}/view-as/sessions   identisch zu .../l/{uuid}/sessions, ohne PIN
 ```

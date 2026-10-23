@@ -140,9 +140,11 @@ func (s *Server) dashboardSummary(r *http.Request, friend store.Friend) (dashboa
 	}, nil
 }
 
+// handleFriendSessions returns the friend's complete charging history. The
+// frontend caches it and filters by time range client-side, so the range
+// picker never triggers another EVCC call.
 func (s *Server) handleFriendSessions(w http.ResponseWriter, r *http.Request, friend store.Friend) {
-	now := time.Now()
-	sessions, err := s.evcc.Sessions(r.Context(), now.Year(), 0)
+	sessions, err := s.evcc.Sessions(r.Context(), 0, 0)
 	if err != nil {
 		writeError(w, http.StatusBadGateway, "could not reach EVCC")
 		return
