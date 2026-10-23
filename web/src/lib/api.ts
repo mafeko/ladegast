@@ -50,7 +50,7 @@ async function request<T>(method: string, url: string, body?: unknown): Promise<
 // --- Friend-facing API (PUBLIC_PREFIX) ---
 
 export function getFriendStatus(uuid: string): Promise<FriendStatus> {
-  return request('GET', `${PUBLIC_PREFIX}/l/${uuid}`)
+  return request('GET', `${PUBLIC_PREFIX}/l/${uuid}/status`)
 }
 
 export function friendLogin(uuid: string, pin: string): Promise<{ name: string }> {

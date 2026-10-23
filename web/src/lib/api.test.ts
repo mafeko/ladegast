@@ -61,11 +61,11 @@ describe('request error handling (via any endpoint)', () => {
 })
 
 describe('friend-facing endpoints', () => {
-  it('getFriendStatus calls GET /public/l/{uuid}', async () => {
+  it('getFriendStatus calls GET /public/l/{uuid}/status', async () => {
     const fetchMock = mockFetchOnce(200, { authenticated: false })
     await api.getFriendStatus('abc')
     expect(fetchMock).toHaveBeenCalledWith(
-      '/public/l/abc',
+      '/public/l/abc/status',
       expect.objectContaining({ method: 'GET', credentials: 'include' }),
     )
   })
