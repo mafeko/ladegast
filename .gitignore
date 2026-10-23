@@ -1,0 +1,17 @@
+/data/
+*.db
+
+.env
+.env.*
+!.env.example
+
+config.local.*
+*.secrets.*
+
+/bin/
+/dist/
+
+*.test
+*.out
+
+.DS_Store
