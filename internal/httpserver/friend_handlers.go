@@ -15,6 +15,7 @@ import (
 func (s *Server) registerPublicRoutes(mux *http.ServeMux) {
 	mux.HandleFunc("GET "+s.publicPath("/l/{uuid}"), s.handleFriendStatus)
 	mux.HandleFunc("POST "+s.publicPath("/l/{uuid}/login"), s.handleFriendLogin)
+	mux.HandleFunc("POST "+s.publicPath("/l/{uuid}/logout"), s.requireFriend(s.handleFriendLogout))
 	mux.HandleFunc("GET "+s.publicPath("/l/{uuid}/dashboard"), s.requireFriend(s.handleFriendDashboard))
 	mux.HandleFunc("GET "+s.publicPath("/l/{uuid}/sessions"), s.requireFriend(s.handleFriendSessions))
 	mux.HandleFunc("POST "+s.publicPath("/l/{uuid}/mode"), s.requireFriend(s.handleFriendSetMode))
@@ -83,6 +84,11 @@ func (s *Server) handleFriendLogin(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	writeJSON(w, http.StatusOK, map[string]string{"name": friend.Name})
+}
+
+func (s *Server) handleFriendLogout(w http.ResponseWriter, r *http.Request, _ store.Friend) {
+	s.clearSessionCookie(w, friendCookieName)
+	writeJSON(w, http.StatusOK, map[string]bool{"ok": true})
 }
 
 func (s *Server) handleFriendDashboard(w http.ResponseWriter, r *http.Request, friend store.Friend) {

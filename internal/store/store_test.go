@@ -63,6 +63,19 @@ func TestFriendCRUD(t *testing.T) {
 	}
 }
 
+func TestListFriends_CorruptData(t *testing.T) {
+	s := openTestStore(t)
+	err := s.db.Update(func(tx *bolt.Tx) error {
+		return tx.Bucket([]byte(bucketFriends)).Put([]byte("broken"), []byte("not json"))
+	})
+	if err != nil {
+		t.Fatalf("seed corrupt data: %v", err)
+	}
+	if _, err := s.ListFriends(); err == nil {
+		t.Fatal("expected error listing friends with corrupt data, got nil")
+	}
+}
+
 func TestDeleteFriend(t *testing.T) {
 	s := openTestStore(t)
 	f := Friend{ID: "friend-1", Name: "Alex"}
@@ -89,6 +102,18 @@ func TestOpen_FailsWhenDataDirIsAFile(t *testing.T) {
 	// blocked exists as a regular file, so MkdirAll(blocked) must fail.
 	if _, err := Open(blocked); err == nil {
 		t.Fatal("expected error opening store in a path blocked by a file, got nil")
+	}
+}
+
+func TestOpen_FailsWhenDBPathIsADirectory(t *testing.T) {
+	dir := t.TempDir()
+	// Pre-create "ladegast.db" as a directory so bolt.Open fails trying to
+	// open it as a file.
+	if err := os.Mkdir(dir+"/ladegast.db", 0o700); err != nil {
+		t.Fatalf("os.Mkdir: %v", err)
+	}
+	if _, err := Open(dir); err == nil {
+		t.Fatal("expected error opening bbolt file that is actually a directory, got nil")
 	}
 }
 

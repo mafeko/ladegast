@@ -14,6 +14,7 @@ const pinLength = 6
 
 func (s *Server) registerAdminRoutes(mux *http.ServeMux) {
 	mux.HandleFunc("POST "+s.adminPath("/login"), s.handleAdminLogin)
+	mux.HandleFunc("POST "+s.adminPath("/logout"), s.requireAdmin(s.handleAdminLogout))
 	mux.HandleFunc("GET "+s.adminPath("/friends"), s.requireAdmin(s.handleAdminListFriends))
 	mux.HandleFunc("POST "+s.adminPath("/friends"), s.requireAdmin(s.handleAdminCreateFriend))
 	mux.HandleFunc("PUT "+s.adminPath("/friends/{id}"), s.requireAdmin(s.handleAdminUpdateFriend))
@@ -56,6 +57,11 @@ func (s *Server) handleAdminLogin(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	writeJSON(w, http.StatusOK, map[string]string{"username": admin.Username})
+}
+
+func (s *Server) handleAdminLogout(w http.ResponseWriter, r *http.Request) {
+	s.clearSessionCookie(w, adminCookieName)
+	writeJSON(w, http.StatusOK, map[string]bool{"ok": true})
 }
 
 func (s *Server) handleAdminListFriends(w http.ResponseWriter, r *http.Request) {
