@@ -14,10 +14,21 @@ func TestUUID_FormatAndUniqueness(t *testing.T) {
 		if !uuidRE.MatchString(id) {
 			t.Fatalf("UUID() = %q, does not match v4 pattern", id)
 		}
+		if !ValidUUID(id) {
+			t.Fatalf("ValidUUID(%q) = false, want true", id)
+		}
 		if seen[id] {
 			t.Fatalf("UUID() produced duplicate %q", id)
 		}
 		seen[id] = true
+	}
+}
+
+func TestValidUUID_RejectsGarbage(t *testing.T) {
+	for _, bad := range []string{"", "not-a-uuid", "11111111-1111-1111-1111-11111111111"} {
+		if ValidUUID(bad) {
+			t.Errorf("ValidUUID(%q) = true, want false", bad)
+		}
 	}
 }
 
