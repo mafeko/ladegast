@@ -4,6 +4,7 @@ import (
 	"context"
 	"net/http"
 	"net/http/httptest"
+	"net/url"
 	"testing"
 )
 
@@ -54,6 +55,46 @@ func TestSessions_ErrorStatus(t *testing.T) {
 	}
 }
 
+func TestSessions_InvalidJSON(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Write([]byte(`not json`))
+	}))
+	defer srv.Close()
+
+	c := NewClient(srv.URL, "test-key")
+	if _, err := c.Sessions(context.Background(), 0, 0); err == nil {
+		t.Fatal("expected decode error, got nil")
+	}
+}
+
+func TestSessions_NetworkError(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {}))
+	srv.Close() // closed before use: connection will be refused
+
+	c := NewClient(srv.URL, "test-key")
+	if _, err := c.Sessions(context.Background(), 0, 0); err == nil {
+		t.Fatal("expected network error, got nil")
+	}
+}
+
+func TestSessions_MonthFilter(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Query().Get("month") != "10" {
+			t.Errorf("month query = %q, want 10", r.URL.Query().Get("month"))
+		}
+		if r.URL.Query().Get("year") != "" {
+			t.Errorf("year query = %q, want empty", r.URL.Query().Get("year"))
+		}
+		w.Write([]byte(`[]`))
+	}))
+	defer srv.Close()
+
+	c := NewClient(srv.URL, "test-key")
+	if _, err := c.Sessions(context.Background(), 0, 10); err != nil {
+		t.Fatalf("Sessions: %v", err)
+	}
+}
+
 func TestSetVehicleMode(t *testing.T) {
 	var gotPath string
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -85,5 +126,35 @@ func TestSetVehicleMode_RequiresVehicleName(t *testing.T) {
 	c := NewClient("http://example.invalid", "test-key")
 	if err := c.SetVehicleMode(context.Background(), "", ModeNow); err == nil {
 		t.Fatal("expected error for empty vehicle name, got nil")
+	}
+}
+
+func TestSetVehicleMode_ErrorStatus(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusNotFound)
+	}))
+	defer srv.Close()
+
+	c := NewClient(srv.URL, "test-key")
+	if err := c.SetVehicleMode(context.Background(), "vehicle_1", ModeNow); err == nil {
+		t.Fatal("expected error for 404 response, got nil")
+	}
+}
+
+func TestSetVehicleMode_EscapesVehicleName(t *testing.T) {
+	var gotPath string
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		gotPath = r.URL.EscapedPath()
+		w.Write([]byte(`{"mode":"now"}`))
+	}))
+	defer srv.Close()
+
+	c := NewClient(srv.URL, "test-key")
+	if err := c.SetVehicleMode(context.Background(), "my car/weird name", ModeNow); err != nil {
+		t.Fatalf("SetVehicleMode: %v", err)
+	}
+	want := "/api/vehicles/" + url.PathEscape("my car/weird name") + "/mode/now"
+	if gotPath != want {
+		t.Errorf("path = %q, want %q", gotPath, want)
 	}
 }

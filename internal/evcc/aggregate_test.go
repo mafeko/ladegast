@@ -67,6 +67,35 @@ func TestGroupBy_Day(t *testing.T) {
 	}
 }
 
+func TestBucket_AllPeriods(t *testing.T) {
+	s := Session{Created: mustParse(t, "2026-10-17T10:00:00Z")}
+	cases := []struct {
+		period Period
+		want   string
+	}{
+		{PeriodDay, "2026-10-17"},
+		{PeriodWeek, "2026-W42"},
+		{PeriodMonth, "2026-10"},
+		{PeriodYear, "2026"},
+		{Period("bogus"), "2026-10-17"}, // unknown period falls back to day
+	}
+	for _, c := range cases {
+		if got := Bucket(c.period, s); got != c.want {
+			t.Errorf("Bucket(%q) = %q, want %q", c.period, got, c.want)
+		}
+	}
+}
+
+func TestSession_NilSolarPercentage(t *testing.T) {
+	s := Session{ChargedEnergy: 10}
+	if got := s.SolarKWh(); got != 0 {
+		t.Errorf("SolarKWh() with nil SolarPercentage = %v, want 0", got)
+	}
+	if got := s.GridKWh(); got != 10 {
+		t.Errorf("GridKWh() with nil SolarPercentage = %v, want 10", got)
+	}
+}
+
 func TestGroupBy_Year(t *testing.T) {
 	sessions := []Session{
 		{Created: mustParse(t, "2026-01-01T00:00:00Z"), ChargedEnergy: 1, SolarPercentage: pct(0)},
