@@ -76,3 +76,39 @@ tasks:
     desc: Remove build artifacts and local data
     cmds:
       - rm -rf bin coverage.out
+
+  web:install:
+    desc: Install frontend dependencies
+    dir: web
+    cmds:
+      - npm install
+
+  web:dev:
+    desc: Run the frontend dev server
+    dir: web
+    cmds:
+      - npm run dev
+
+  web:build:
+    desc: Typecheck and build the frontend for production
+    dir: web
+    cmds:
+      - npm run build
+
+  web:test:
+    desc: Run frontend tests
+    dir: web
+    cmds:
+      - npm test
+
+  web:coverage:
+    desc: Run frontend tests with coverage
+    dir: web
+    cmds:
+      - npm run coverage
+
+  web:check:
+    desc: Build and test the frontend - run before committing
+    cmds:
+      - task: web:build
+      - task: web:test
