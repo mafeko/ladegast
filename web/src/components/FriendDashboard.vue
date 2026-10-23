@@ -1,25 +1,23 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue'
 import { getDashboard, getSessions, friendLogout } from '../lib/api'
-import type { Dashboard, SessionView } from '../lib/types'
+import type { Dashboard } from '../lib/types'
 import SummaryCard from './SummaryCard.vue'
-import SessionTable from './SessionTable.vue'
+import UsageExplorer from './UsageExplorer.vue'
 import ModeSwitch from './ModeSwitch.vue'
 
 const props = defineProps<{ uuid: string }>()
 const emit = defineEmits<{ loggedOut: [] }>()
 
 const dashboard = ref<Dashboard | null>(null)
-const sessions = ref<SessionView[]>([])
 const error = ref('')
 const loading = ref(true)
 
-async function load() {
-  loading.value = true
+async function load(silent = false) {
+  loading.value = !silent
   error.value = ''
   try {
     dashboard.value = await getDashboard(props.uuid)
-    sessions.value = await getSessions(props.uuid)
   } catch (e) {
     error.value = e instanceof Error ? e.message : 'Laden fehlgeschlagen'
   } finally {
@@ -57,7 +55,7 @@ defineExpose({ load })
     </p>
     <template v-else-if="dashboard">
       <div class="mb-6 rounded-2xl border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-800 dark:bg-gray-900">
-        <ModeSwitch :uuid="props.uuid" @changed="load" />
+        <ModeSwitch :uuid="props.uuid" @changed="load(true)" />
       </div>
       <div class="mb-6 grid grid-cols-2 gap-4 sm:grid-cols-4">
         <SummaryCard title="Heute" :summary="dashboard.today" />
@@ -65,9 +63,7 @@ defineExpose({ load })
         <SummaryCard title="Dieser Monat" :summary="dashboard.thisMonth" />
         <SummaryCard title="Dieses Jahr" :summary="dashboard.thisYear" />
       </div>
-      <div class="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-800 dark:bg-gray-900">
-        <SessionTable :sessions="sessions" />
-      </div>
+      <UsageExplorer :cache-key="`friend:${props.uuid}`" :load="() => getSessions(props.uuid)" />
     </template>
   </div>
 </template>

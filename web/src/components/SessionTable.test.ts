@@ -12,7 +12,7 @@ describe('SessionTable', () => {
       },
     })
     expect(wrapper.findAll('tbody tr')).toHaveLength(1)
-    expect(wrapper.text()).toContain('5.00 kWh')
+    expect(wrapper.text()).toContain('5,00 kWh')
   })
 
   it('shows an empty state when there are no sessions', () => {
