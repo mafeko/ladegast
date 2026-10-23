@@ -1,8 +1,11 @@
 package store
 
 import (
+	"os"
 	"testing"
 	"time"
+
+	bolt "go.etcd.io/bbolt"
 )
 
 func openTestStore(t *testing.T) *Store {
@@ -60,6 +63,35 @@ func TestFriendCRUD(t *testing.T) {
 	}
 }
 
+func TestDeleteFriend(t *testing.T) {
+	s := openTestStore(t)
+	f := Friend{ID: "friend-1", Name: "Alex"}
+	if err := s.CreateFriend(f); err != nil {
+		t.Fatalf("CreateFriend: %v", err)
+	}
+	if err := s.DeleteFriend("friend-1"); err != nil {
+		t.Fatalf("DeleteFriend: %v", err)
+	}
+	if _, err := s.GetFriend("friend-1"); err != ErrNotFound {
+		t.Errorf("GetFriend after delete err = %v, want ErrNotFound", err)
+	}
+	if err := s.DeleteFriend("friend-1"); err != ErrNotFound {
+		t.Errorf("DeleteFriend(missing) err = %v, want ErrNotFound", err)
+	}
+}
+
+func TestOpen_FailsWhenDataDirIsAFile(t *testing.T) {
+	dir := t.TempDir()
+	blocked := dir + "/blocked"
+	if err := os.WriteFile(blocked, []byte("x"), 0o600); err != nil {
+		t.Fatalf("os.WriteFile: %v", err)
+	}
+	// blocked exists as a regular file, so MkdirAll(blocked) must fail.
+	if _, err := Open(blocked); err == nil {
+		t.Fatal("expected error opening store in a path blocked by a file, got nil")
+	}
+}
+
 func TestAdminCRUD(t *testing.T) {
 	s := openTestStore(t)
 
@@ -89,6 +121,10 @@ func TestAdminCRUD(t *testing.T) {
 	}
 	if a.PasswordHash != "hash" {
 		t.Errorf("PasswordHash = %q, want hash", a.PasswordHash)
+	}
+
+	if _, err := s.GetAdmin("missing"); err != ErrNotFound {
+		t.Errorf("GetAdmin(missing) err = %v, want ErrNotFound", err)
 	}
 }
 
@@ -137,5 +173,21 @@ func TestRateLimit(t *testing.T) {
 	count, _ = s.CountRecentFailures(key, now, window)
 	if count != 0 {
 		t.Fatalf("count after reset = %d, want 0", count)
+	}
+}
+
+func TestCountRecentFailures_CorruptData(t *testing.T) {
+	s := openTestStore(t)
+	key := "1.2.3.4:friend-1"
+
+	err := s.db.Update(func(tx *bolt.Tx) error {
+		return tx.Bucket([]byte(bucketRateLimit)).Put([]byte(key), []byte("not json"))
+	})
+	if err != nil {
+		t.Fatalf("seed corrupt data: %v", err)
+	}
+
+	if _, err := s.CountRecentFailures(key, time.Now(), 15*time.Minute); err == nil {
+		t.Fatal("expected error reading corrupt rate-limit data, got nil")
 	}
 }
