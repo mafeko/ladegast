@@ -45,7 +45,7 @@ async function onSubmit() {
           id="name"
           v-model="name"
           required
-          class="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:border-gray-700 dark:bg-gray-950"
+          class="w-full rounded-lg border border-gray-300 bg-white min-h-11 px-3 py-2 text-base focus:outline-none sm:min-h-0 sm:text-sm focus:ring-2 focus:ring-indigo-500 dark:border-gray-700 dark:bg-gray-950"
         />
       </div>
       <div>
@@ -54,7 +54,7 @@ async function onSubmit() {
           id="vehicleName"
           v-model="vehicleName"
           required
-          class="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:border-gray-700 dark:bg-gray-950"
+          class="w-full rounded-lg border border-gray-300 bg-white min-h-11 px-3 py-2 text-base focus:outline-none sm:min-h-0 sm:text-sm focus:ring-2 focus:ring-indigo-500 dark:border-gray-700 dark:bg-gray-950"
         />
       </div>
       <div>
@@ -66,7 +66,7 @@ async function onSubmit() {
           step="0.01"
           min="0"
           required
-          class="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:border-gray-700 dark:bg-gray-950"
+          class="w-full rounded-lg border border-gray-300 bg-white min-h-11 px-3 py-2 text-base focus:outline-none sm:min-h-0 sm:text-sm focus:ring-2 focus:ring-indigo-500 dark:border-gray-700 dark:bg-gray-950"
         />
       </div>
       <div>
@@ -78,7 +78,7 @@ async function onSubmit() {
           step="0.01"
           min="0"
           required
-          class="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:border-gray-700 dark:bg-gray-950"
+          class="w-full rounded-lg border border-gray-300 bg-white min-h-11 px-3 py-2 text-base focus:outline-none sm:min-h-0 sm:text-sm focus:ring-2 focus:ring-indigo-500 dark:border-gray-700 dark:bg-gray-950"
         />
       </div>
       <div class="sm:col-span-2">
@@ -92,14 +92,14 @@ async function onSubmit() {
           autocomplete="off"
           placeholder="Leer lassen für eine zufällige 6-stellige PIN"
           title="4 bis 12 Ziffern"
-          class="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:border-gray-700 dark:bg-gray-950"
+          class="w-full rounded-lg border border-gray-300 bg-white min-h-11 px-3 py-2 text-base focus:outline-none sm:min-h-0 sm:text-sm focus:ring-2 focus:ring-indigo-500 dark:border-gray-700 dark:bg-gray-950"
         />
       </div>
     </div>
     <button
       type="submit"
       :disabled="submitting"
-      class="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-indigo-500 disabled:cursor-not-allowed disabled:opacity-50"
+      class="rounded-lg bg-indigo-600 min-h-11 px-4 py-2 text-sm font-medium sm:min-h-0 text-white transition hover:bg-indigo-500 disabled:cursor-not-allowed disabled:opacity-50"
     >
       Freund anlegen
     </button>

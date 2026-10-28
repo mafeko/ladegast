@@ -39,7 +39,7 @@ const INACTIVE =
         type="button"
         :disabled="pending !== null"
         :aria-pressed="current === 'smart'"
-        class="rounded-lg px-4 py-2 text-sm font-medium transition disabled:cursor-not-allowed disabled:opacity-50"
+        class="rounded-lg min-h-11 px-4 py-2 text-sm font-medium sm:min-h-0 transition disabled:cursor-not-allowed disabled:opacity-50"
         :class="current === 'smart' ? ACTIVE : INACTIVE"
         @click="choose('smart')"
       >
@@ -49,7 +49,7 @@ const INACTIVE =
         type="button"
         :disabled="pending !== null"
         :aria-pressed="current === 'now'"
-        class="rounded-lg px-4 py-2 text-sm font-medium transition disabled:cursor-not-allowed disabled:opacity-50"
+        class="rounded-lg min-h-11 px-4 py-2 text-sm font-medium sm:min-h-0 transition disabled:cursor-not-allowed disabled:opacity-50"
         :class="current === 'now' ? ACTIVE : INACTIVE"
         @click="choose('now')"
       >

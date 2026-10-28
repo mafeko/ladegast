@@ -82,9 +82,9 @@ async function onDelete() {
 }
 
 const inputClass =
-  'rounded-lg border border-gray-300 bg-white px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:border-gray-700 dark:bg-gray-950'
+  'rounded-lg border border-gray-300 bg-white min-h-11 px-2 py-1 text-base focus:outline-none sm:min-h-0 sm:text-sm focus:ring-2 focus:ring-indigo-500 dark:border-gray-700 dark:bg-gray-950'
 const buttonClass =
-  'rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-xs font-medium text-gray-700 transition hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 dark:hover:bg-gray-800'
+  'rounded-lg border border-gray-300 bg-white min-h-11 px-3 py-1.5 text-xs font-medium sm:min-h-0 text-gray-700 transition hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 dark:hover:bg-gray-800'
 const cellClass =
   'flex items-center justify-between gap-4 px-3 py-1 before:text-xs before:text-gray-500 before:content-[attr(data-label)] md:table-cell md:py-2 md:before:content-none dark:before:text-gray-400'
 </script>
@@ -106,7 +106,7 @@ const cellClass =
     <td class="flex flex-wrap items-center gap-2 px-3 py-2 md:table-cell md:space-x-2 md:space-y-2 md:whitespace-normal">
       <button
         type="button"
-        class="rounded-lg bg-indigo-600 px-3 py-1.5 text-xs font-medium text-white transition hover:bg-indigo-500"
+        class="rounded-lg bg-indigo-600 min-h-11 px-3 py-1.5 text-xs font-medium sm:min-h-0 text-white transition hover:bg-indigo-500"
         @click="save"
       >
         Speichern
@@ -122,7 +122,7 @@ const cellClass =
       </RouterLink>
       <button
         type="button"
-        class="rounded-lg border border-red-300 bg-white px-3 py-1.5 text-xs font-medium text-red-600 transition hover:bg-red-50 dark:border-red-900 dark:bg-gray-900 dark:text-red-400 dark:hover:bg-red-950/40"
+        class="rounded-lg border border-red-300 bg-white min-h-11 px-3 py-1.5 text-xs font-medium sm:min-h-0 text-red-600 transition hover:bg-red-50 dark:border-red-900 dark:bg-gray-900 dark:text-red-400 dark:hover:bg-red-950/40"
         @click="onDelete"
       >
         Löschen
@@ -144,7 +144,7 @@ const cellClass =
           class="w-56"
           :class="inputClass"
         />
-        <button type="submit" class="rounded-lg bg-indigo-600 px-3 py-1.5 text-xs font-medium text-white transition hover:bg-indigo-500">
+        <button type="submit" class="rounded-lg bg-indigo-600 min-h-11 px-3 py-1.5 text-xs font-medium sm:min-h-0 text-white transition hover:bg-indigo-500">
           PIN setzen
         </button>
         <button type="button" :class="buttonClass" @click="setPin()">Zufällige PIN</button>

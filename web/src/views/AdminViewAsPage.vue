@@ -27,7 +27,7 @@ onMounted(load)
 </script>
 
 <template>
-  <main class="mx-auto max-w-5xl px-4 py-10">
+  <main class="mx-auto max-w-5xl px-4 py-6 sm:py-10">
     <RouterLink to="/admin" class="text-sm font-medium text-indigo-600 hover:underline dark:text-indigo-400">
       ← Zurück
     </RouterLink>
@@ -36,7 +36,7 @@ onMounted(load)
       {{ error }}
     </p>
     <template v-else-if="dashboard">
-      <h2 class="mt-6 mb-6 text-2xl font-semibold tracking-tight">Ansicht als {{ dashboard.friend.name }}</h2>
+      <h2 class="mt-6 mb-6 text-xl font-semibold sm:text-2xl tracking-tight">Ansicht als {{ dashboard.friend.name }}</h2>
       <div class="mb-6 grid grid-cols-2 gap-4 sm:grid-cols-4">
         <SummaryCard title="Heute" :summary="dashboard.today" />
         <SummaryCard title="Diese Woche" :summary="dashboard.thisWeek" />

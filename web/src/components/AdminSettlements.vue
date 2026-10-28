@@ -72,12 +72,12 @@ onMounted(load)
           aria-label="Abrechnungsdatum"
           required
           :max="maxAt"
-          class="rounded-lg border border-gray-300 bg-white px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:border-gray-700 dark:bg-gray-950"
+          class="rounded-lg border border-gray-300 bg-white min-h-11 px-2 py-1 text-base focus:outline-none sm:min-h-0 sm:text-sm focus:ring-2 focus:ring-indigo-500 dark:border-gray-700 dark:bg-gray-950"
         />
         <button
           type="submit"
           :disabled="busy || !data"
-          class="rounded-lg bg-indigo-600 px-3 py-1.5 text-xs font-medium text-white transition hover:bg-indigo-500 disabled:opacity-50"
+          class="rounded-lg bg-indigo-600 min-h-11 px-3 py-1.5 text-xs font-medium sm:min-h-0 text-white transition hover:bg-indigo-500 disabled:opacity-50"
         >
           Abrechnung anlegen
         </button>
@@ -90,7 +90,7 @@ onMounted(load)
         <button
           type="button"
           :disabled="busy"
-          class="rounded-lg border border-red-300 bg-white px-2 py-1 text-xs font-medium text-red-600 transition hover:bg-red-50 disabled:opacity-50 dark:border-red-900 dark:bg-gray-900 dark:text-red-400 dark:hover:bg-red-950/40"
+          class="rounded-lg border border-red-300 bg-white min-h-11 px-2 py-1 text-xs font-medium sm:min-h-0 text-red-600 transition hover:bg-red-50 disabled:opacity-50 dark:border-red-900 dark:bg-gray-900 dark:text-red-400 dark:hover:bg-red-950/40"
           @click="remove(s.id, s.at)"
         >
           Löschen

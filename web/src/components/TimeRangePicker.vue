@@ -110,40 +110,48 @@ onBeforeUnmount(() => {
   document.removeEventListener('keydown', onKeydown)
 })
 
+// Mobile first: 44px touch targets and 16px input text (iOS zooms into smaller inputs); sm: tightens both.
 const arrowClass =
-  'rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 dark:hover:bg-gray-800'
+  'min-h-11 min-w-11 rounded-lg border border-gray-300 bg-white px-3 text-base font-medium text-gray-700 transition hover:bg-gray-50 sm:min-h-0 sm:min-w-0 sm:py-2 sm:text-sm dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 dark:hover:bg-gray-800'
 const inputClass =
-  'rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:border-gray-700 dark:bg-gray-950'
-const primaryClass = 'rounded-lg bg-indigo-600 px-3 py-2 text-sm font-medium text-white transition hover:bg-indigo-500 disabled:opacity-50'
+  'min-h-11 rounded-lg border border-gray-300 bg-white px-3 py-2 text-base focus:outline-none focus:ring-2 focus:ring-indigo-500 sm:min-h-0 sm:text-sm dark:border-gray-700 dark:bg-gray-950'
+const primaryClass =
+  'min-h-11 rounded-lg bg-indigo-600 px-4 text-sm font-medium text-white transition hover:bg-indigo-500 disabled:opacity-50 sm:min-h-0 sm:py-2'
 </script>
 
 <template>
-  <div ref="root" class="relative inline-flex items-center gap-2">
+  <div ref="root" class="relative flex w-full items-stretch gap-2 sm:inline-flex sm:w-auto sm:items-center">
     <button type="button" aria-label="Voriger Zeitraum" :class="arrowClass" @click="emit('update:modelValue', shiftRange(modelValue, -1))">‹</button>
     <button
       type="button"
       aria-haspopup="dialog"
       :aria-expanded="open"
-      class="min-w-48 rounded-lg border border-gray-300 bg-white px-4 py-2 text-left text-sm font-medium text-gray-900 transition hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100 dark:hover:bg-gray-800"
+      class="min-h-11 min-w-0 flex-1 truncate rounded-lg border border-gray-300 bg-white px-4 text-left text-sm font-medium text-gray-900 transition hover:bg-gray-50 sm:min-h-0 sm:min-w-48 sm:flex-none sm:py-2 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100 dark:hover:bg-gray-800"
       @click="open = !open"
     >
       {{ label }} <span aria-hidden="true" class="float-right ml-3 text-gray-400">▾</span>
     </button>
     <button type="button" aria-label="Nächster Zeitraum" :class="arrowClass" @click="emit('update:modelValue', shiftRange(modelValue, 1))">›</button>
 
+    <!-- Phones: bottom sheet over a backdrop. sm and up: popover under the button. -->
+    <div v-if="open" data-testid="picker-backdrop" class="fixed inset-0 z-20 bg-black/40 sm:hidden" @click="open = false"></div>
     <div
       v-if="open"
       role="dialog"
       aria-label="Zeitraum wählen"
-      class="absolute top-full left-0 z-20 mt-2 flex w-[34rem] flex-col max-sm:fixed max-sm:inset-x-4 max-sm:bottom-4 max-sm:mt-0 max-sm:h-fit max-sm:max-h-[85vh] max-sm:w-auto max-sm:overflow-y-auto overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-xl sm:flex-row dark:border-gray-800 dark:bg-gray-900"
+      class="fixed inset-x-0 bottom-0 z-30 flex max-h-[85dvh] flex-col overflow-y-auto rounded-t-2xl border border-gray-200 bg-white pb-[env(safe-area-inset-bottom)] shadow-xl sm:absolute sm:inset-x-auto sm:top-full sm:bottom-auto sm:left-0 sm:z-20 sm:mt-2 sm:max-h-none sm:w-[34rem] sm:flex-row sm:overflow-hidden sm:rounded-2xl sm:pb-0 dark:border-gray-800 dark:bg-gray-900"
     >
+      <div class="flex items-center justify-between border-b border-gray-100 px-4 py-2 sm:hidden dark:border-gray-800">
+        <span class="text-sm font-semibold">Zeitraum wählen</span>
+        <button type="button" aria-label="Schließen" class="min-h-11 min-w-11 text-xl text-gray-500 dark:text-gray-400" @click="open = false">✕</button>
+      </div>
       <div class="border-b border-gray-100 p-3 sm:w-44 sm:shrink-0 sm:border-r sm:border-b-0 dark:border-gray-800">
         <p class="mb-2 px-2 text-xs font-semibold tracking-wide text-gray-500 uppercase dark:text-gray-400">Schnellauswahl</p>
         <ul class="grid grid-cols-2 gap-1 sm:grid-cols-1">
           <li v-for="p in PRESETS" :key="p.id">
             <button
               type="button"
-              class="w-full rounded-lg px-2 py-1.5 text-left text-sm transition hover:bg-gray-100 dark:hover:bg-gray-800"
+              class="min-h-11 w-full rounded-lg px-3 text-left text-sm transition hover:bg-gray-100 sm:min-h-0 sm:px-2 sm:py-1.5 dark:hover:bg-gray-800"
               :class="activePresetId === p.id ? 'bg-indigo-50 font-medium text-indigo-700 dark:bg-indigo-950/50 dark:text-indigo-300' : ''"
               @click="select(p.range(new Date()))"
             >
@@ -162,7 +170,7 @@ const primaryClass = 'rounded-lg bg-indigo-600 px-3 py-2 text-sm font-medium tex
             type="button"
             role="tab"
             :aria-selected="tab === t.id"
-            class="rounded-lg px-2.5 py-1 text-sm transition"
+            class="min-h-11 rounded-lg px-3 text-sm transition sm:min-h-0 sm:px-2.5 sm:py-1"
             :class="tab === t.id ? 'bg-indigo-600 font-medium text-white' : 'text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-800'"
             @click="tab = t.id"
           >
@@ -184,12 +192,12 @@ const primaryClass = 'rounded-lg bg-indigo-600 px-3 py-2 text-sm font-medium tex
             <span class="text-sm font-semibold">{{ pickerYear }}</span>
             <button type="button" aria-label="Folgejahr" :class="arrowClass" @click="pickerYear++">›</button>
           </div>
-          <div v-if="tab === 'month'" class="grid grid-cols-4 gap-1">
+          <div v-if="tab === 'month'" class="grid grid-cols-3 gap-1 sm:grid-cols-4">
             <button
               v-for="(m, i) in MONTHS"
               :key="m"
               type="button"
-              class="rounded-lg px-2 py-2 text-sm transition hover:bg-gray-100 dark:hover:bg-gray-800"
+              class="min-h-11 rounded-lg px-2 text-sm transition hover:bg-gray-100 sm:min-h-0 sm:py-2 dark:hover:bg-gray-800"
               :class="
                 modelValue.from.getFullYear() === pickerYear && modelValue.from.getMonth() === i && modelValue.to.getTime() === new Date(pickerYear, i + 1, 1).getTime()
                   ? 'bg-indigo-50 font-medium text-indigo-700 dark:bg-indigo-950/50 dark:text-indigo-300'
@@ -204,7 +212,7 @@ const primaryClass = 'rounded-lg bg-indigo-600 px-3 py-2 text-sm font-medium tex
         </div>
 
         <form v-else class="space-y-2" @submit.prevent="applyCustom">
-          <div class="grid grid-cols-2 gap-2">
+          <div class="grid gap-2 min-[420px]:grid-cols-2">
             <label class="block text-sm text-gray-600 dark:text-gray-300">
               Von
               <input v-model="customFrom" type="date" required class="mt-1 block w-full" :class="inputClass" />
@@ -215,7 +223,7 @@ const primaryClass = 'rounded-lg bg-indigo-600 px-3 py-2 text-sm font-medium tex
             </label>
           </div>
           <p v-if="customError" role="alert" class="text-xs text-red-600 dark:text-red-400">{{ customError }}</p>
-          <button type="submit" :disabled="!!customError" :class="primaryClass">Übernehmen</button>
+          <button type="submit" :disabled="!!customError" :class="primaryClass" class="w-full sm:w-auto">Übernehmen</button>
         </form>
       </div>
     </div>

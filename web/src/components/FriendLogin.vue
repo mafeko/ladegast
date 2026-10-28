@@ -24,9 +24,9 @@ async function onSubmit() {
 </script>
 
 <template>
-  <div class="flex min-h-screen items-center justify-center p-4">
+  <div class="flex min-h-dvh items-center justify-center p-4">
     <form
-      class="w-full max-w-sm space-y-5 rounded-2xl border border-gray-200 bg-white p-8 shadow-sm dark:border-gray-800 dark:bg-gray-900"
+      class="w-full max-w-sm space-y-5 rounded-2xl border border-gray-200 bg-white p-6 shadow-sm sm:p-8 dark:border-gray-800 dark:bg-gray-900"
       @submit.prevent="onSubmit"
     >
       <div>
@@ -42,13 +42,13 @@ async function onSubmit() {
           inputmode="numeric"
           autocomplete="one-time-code"
           required
-          class="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:border-gray-700 dark:bg-gray-950"
+          class="w-full rounded-lg border border-gray-300 bg-white min-h-11 px-3 py-2 text-base focus:outline-none sm:min-h-0 sm:text-sm focus:ring-2 focus:ring-indigo-500 dark:border-gray-700 dark:bg-gray-950"
         />
       </div>
       <button
         type="submit"
         :disabled="submitting"
-        class="w-full rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-indigo-500 disabled:cursor-not-allowed disabled:opacity-50"
+        class="w-full rounded-lg bg-indigo-600 min-h-11 px-4 py-2 text-sm font-medium sm:min-h-0 text-white transition hover:bg-indigo-500 disabled:cursor-not-allowed disabled:opacity-50"
       >
         Anmelden
       </button>

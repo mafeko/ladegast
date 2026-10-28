@@ -19,7 +19,7 @@ async function copy() {
 <template>
   <button
     type="button"
-    class="rounded-lg border px-3 py-1.5 text-xs font-medium transition"
+    class="rounded-lg border min-h-11 px-3 py-1.5 text-xs font-medium sm:min-h-0 transition"
     :class="
       onColor
         ? 'border-white/40 text-white hover:bg-white/10'

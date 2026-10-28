@@ -90,4 +90,65 @@ describe('TimeRangePicker', () => {
     await w.vm.$nextTick()
     expect(w.find('[role="dialog"]').exists()).toBe(false)
   })
+
+  describe('mobile first', () => {
+    const classesOf = (el: { classes: () => string[] }) => el.classes()
+    const openPicker = async () => {
+      const w = mountPicker()
+      await w.find('button[aria-haspopup="dialog"]').trigger('click')
+      return w
+    }
+
+    // Regression: an unprefixed `top-full` pushed the fixed sheet below the
+    // viewport on phones, so the dropdown looked like it did nothing.
+    it('anchors the dialog to the bottom of the viewport on phones, not below it', async () => {
+      const dialog = classesOf((await openPicker()).find('[role="dialog"]'))
+      expect(dialog).toContain('fixed')
+      expect(dialog).toContain('inset-x-0')
+      expect(dialog).toContain('bottom-0')
+      expect(dialog).not.toContain('top-full')
+      expect(dialog).not.toContain('absolute')
+      // popover positioning only from the sm breakpoint up
+      expect(dialog).toContain('sm:absolute')
+      expect(dialog).toContain('sm:top-full')
+    })
+
+    it('limits the sheet height so it scrolls inside small screens', async () => {
+      const dialog = classesOf((await openPicker()).find('[role="dialog"]'))
+      expect(dialog).toContain('max-h-[85dvh]')
+      expect(dialog).toContain('overflow-y-auto')
+    })
+
+    it('closes via backdrop tap', async () => {
+      const w = await openPicker()
+      const backdrop = w.find('[data-testid="picker-backdrop"]')
+      expect(classesOf(backdrop)).toContain('sm:hidden')
+      await backdrop.trigger('click')
+      expect(w.find('[role="dialog"]').exists()).toBe(false)
+      expect(w.find('[data-testid="picker-backdrop"]').exists()).toBe(false)
+    })
+
+    it('closes via the close button', async () => {
+      const w = await openPicker()
+      await w.find('button[aria-label="Schließen"]').trigger('click')
+      expect(w.find('[role="dialog"]').exists()).toBe(false)
+    })
+
+    it('uses 44px touch targets and 16px inputs by default', async () => {
+      const w = await openPicker()
+      for (const label of ['Voriger Zeitraum', 'Nächster Zeitraum']) {
+        expect(classesOf(w.find(`button[aria-label="${label}"]`))).toContain('min-h-11')
+      }
+      expect(classesOf(byText(w, 'Heute'))).toContain('min-h-11')
+      expect(classesOf(byText(w, 'Mai'))).toContain('min-h-11')
+      await byText(w, 'Tag').trigger('click')
+      const input = classesOf(w.find('input[type="date"]'))
+      expect(input).toContain('text-base')
+      expect(input).toContain('sm:text-sm')
+    })
+
+    it('spans the full width on phones', () => {
+      expect(classesOf(mountPicker().find('div'))).toContain('w-full')
+    })
+  })
 })
