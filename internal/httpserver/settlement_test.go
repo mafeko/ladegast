@@ -1,8 +1,10 @@
 package httpserver
 
 import (
+	"encoding/json"
 	"math"
 	"net/http"
+	"strings"
 	"testing"
 	"time"
 
@@ -108,5 +110,16 @@ func TestAdminSettlements_CreateListDelete(t *testing.T) {
 	resp.Body.Close()
 	if resp.StatusCode != http.StatusNotFound {
 		t.Errorf("delete unknown status = %d, want 404", resp.StatusCode)
+	}
+}
+
+func TestSettlementsFor_NoSettlementsEncodesEmptyArray(t *testing.T) {
+	got := settlementsFor(store.Friend{VehicleName: "v"}, nil)
+	b, err := json.Marshal(got)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(string(b), `"settlements":[]`) || !strings.Contains(string(b), `"since":null`) {
+		t.Errorf("json = %s, want empty settlements array and null since", b)
 	}
 }
