@@ -1,8 +1,16 @@
 <script setup lang="ts">
+import { computed } from 'vue'
 import type { SessionView } from '../lib/types'
 import { formatDateTime, formatEUR, formatKWh } from '../lib/format'
 
-defineProps<{ sessions: SessionView[] }>()
+const props = defineProps<{ sessions: SessionView[] }>()
+
+const total = computed(() => ({
+  chargedKWh: props.sessions.reduce((a, s) => a + s.chargedKWh, 0),
+  solarKWh: props.sessions.reduce((a, s) => a + s.solarKWh, 0),
+  gridKWh: props.sessions.reduce((a, s) => a + s.gridKWh, 0),
+  costEUR: props.sessions.reduce((a, s) => a + s.costEUR, 0),
+}))
 </script>
 
 <template>
@@ -32,5 +40,14 @@ defineProps<{ sessions: SessionView[] }>()
         <td colspan="5" class="block px-3 md:table-cell py-6 text-center text-gray-500 dark:text-gray-400">Keine Ladevorgänge</td>
       </tr>
     </tbody>
+    <tfoot v-if="sessions.length > 0" class="block md:table-footer-group">
+      <tr data-testid="session-total" class="block border-t border-gray-300 py-2 font-semibold md:table-row md:py-0 dark:border-gray-700">
+        <td class="px-3 py-1 md:py-2">Gesamt</td>
+        <td data-label="Geladen" class="flex justify-between gap-4 px-3 py-1 before:text-xs before:font-semibold before:tracking-wide before:text-gray-500 before:uppercase before:content-[attr(data-label)] md:table-cell md:py-2 md:before:content-none dark:before:text-gray-400">{{ formatKWh(total.chargedKWh) }}</td>
+        <td data-label="Sonne" class="flex justify-between gap-4 px-3 py-1 before:text-xs before:font-semibold before:tracking-wide before:text-gray-500 before:uppercase before:content-[attr(data-label)] md:table-cell md:py-2 md:before:content-none dark:before:text-gray-400">{{ formatKWh(total.solarKWh) }}</td>
+        <td data-label="Netz" class="flex justify-between gap-4 px-3 py-1 before:text-xs before:font-semibold before:tracking-wide before:text-gray-500 before:uppercase before:content-[attr(data-label)] md:table-cell md:py-2 md:before:content-none dark:before:text-gray-400">{{ formatKWh(total.gridKWh) }}</td>
+        <td data-label="Kosten" class="flex justify-between gap-4 px-3 py-1 before:text-xs before:font-semibold before:tracking-wide before:text-gray-500 before:uppercase before:content-[attr(data-label)] md:table-cell md:py-2 md:before:content-none dark:before:text-gray-400">{{ formatEUR(total.costEUR) }}</td>
+      </tr>
+    </tfoot>
   </table>
 </template>

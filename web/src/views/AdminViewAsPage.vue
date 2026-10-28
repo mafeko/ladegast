@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue'
-import { viewAsDashboard, viewAsSessions } from '../lib/api'
+import { viewAsDashboard, viewAsSessions, viewAsSettlements } from '../lib/api'
 import type { Dashboard } from '../lib/types'
 import SummaryCard from '../components/SummaryCard.vue'
 import UsageExplorer from '../components/UsageExplorer.vue'
@@ -43,7 +43,11 @@ onMounted(load)
         <SummaryCard title="Dieser Monat" :summary="dashboard.thisMonth" />
         <SummaryCard title="Dieses Jahr" :summary="dashboard.thisYear" />
       </div>
-      <UsageExplorer :cache-key="`admin:${props.id}`" :load="() => viewAsSessions(props.id)" />
+      <UsageExplorer
+        :cache-key="`admin:${props.id}`"
+        :load="() => viewAsSessions(props.id)"
+        :load-settlements="() => viewAsSettlements(props.id)"
+      />
     </template>
   </main>
 </template>

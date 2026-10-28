@@ -18,6 +18,7 @@ func (s *Server) registerPublicRoutes(mux *http.ServeMux) {
 	mux.HandleFunc("POST "+s.publicPath("/l/{uuid}/logout"), s.requireFriend(s.handleFriendLogout))
 	mux.HandleFunc("GET "+s.publicPath("/l/{uuid}/dashboard"), s.requireFriend(s.handleFriendDashboard))
 	mux.HandleFunc("GET "+s.publicPath("/l/{uuid}/sessions"), s.requireFriend(s.handleFriendSessions))
+	mux.HandleFunc("GET "+s.publicPath("/l/{uuid}/settlements"), s.requireFriend(s.handleFriendSettlements))
 	mux.HandleFunc("POST "+s.publicPath("/l/{uuid}/mode"), s.requireFriend(s.handleFriendSetMode))
 }
 
