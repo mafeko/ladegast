@@ -11,6 +11,7 @@ import type {
   Mode,
   RegeneratedLink,
   SessionView,
+  Settlements,
 } from './types'
 
 export const PUBLIC_PREFIX = '/public'
@@ -41,6 +42,8 @@ const ERROR_MESSAGES: Record<string, string> = {
   'name and vehicleName are required': 'Name und Fahrzeugname sind erforderlich.',
   'pin must be 4 to 12 digits': 'Die PIN muss aus 4 bis 12 Ziffern bestehen.',
   'rates must not be negative': 'Preise dürfen nicht negativ sein.',
+  'settlement not found': 'Abrechnung nicht gefunden.',
+  'settlement time must not be in the future': 'Der Abrechnungszeitpunkt darf nicht in der Zukunft liegen.',
   'internal error': 'Interner Fehler.',
 }
 
@@ -85,6 +88,10 @@ export function getDashboard(uuid: string): Promise<Dashboard> {
 
 export function getSessions(uuid: string): Promise<SessionView[]> {
   return request('GET', `${PUBLIC_PREFIX}/l/${uuid}/sessions`)
+}
+
+export function getSettlements(uuid: string): Promise<Settlements> {
+  return request('GET', `${PUBLIC_PREFIX}/l/${uuid}/settlements`)
 }
 
 export function setMode(uuid: string, mode: Mode): Promise<{ mode: Mode }> {
@@ -132,4 +139,17 @@ export function viewAsDashboard(id: string): Promise<Dashboard> {
 
 export function viewAsSessions(id: string): Promise<SessionView[]> {
   return request('GET', `${ADMIN_PREFIX}/friends/${id}/view-as/sessions`)
+}
+
+export function viewAsSettlements(id: string): Promise<Settlements> {
+  return request('GET', `${ADMIN_PREFIX}/friends/${id}/view-as/settlements`)
+}
+
+/** Records that the friend has paid everything up to `at` (ISO string; server default: now). */
+export function createSettlement(id: string, at?: string): Promise<{ id: string; at: string }> {
+  return request('POST', `${ADMIN_PREFIX}/friends/${id}/settlements`, at ? { at } : {})
+}
+
+export function deleteSettlement(id: string, settlementId: string): Promise<void> {
+  return request('DELETE', `${ADMIN_PREFIX}/friends/${id}/settlements/${settlementId}`)
 }

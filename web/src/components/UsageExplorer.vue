@@ -10,16 +10,23 @@ import {
   type Bucket,
   type Range,
 } from '../lib/range'
-import type { SessionView } from '../lib/types'
+import type { SessionView, Settlements } from '../lib/types'
 import SessionTable from './SessionTable.vue'
+import SettlementTable from './SettlementTable.vue'
 import TimeRangePicker from './TimeRangePicker.vue'
 import UsageChart from './UsageChart.vue'
 
 // The whole history is loaded once per cacheKey; picking a range only
 // filters it in memory.
-const props = defineProps<{ cacheKey: string; load: () => Promise<SessionView[]> }>()
+const props = defineProps<{
+  cacheKey: string
+  load: () => Promise<SessionView[]>
+  /** Optional: settlement history, drawn as lines in the chart and listed below. */
+  loadSettlements?: () => Promise<Settlements>
+}>()
 
 const sessions = ref<SessionView[]>([])
+const settlements = ref<Settlements | null>(null)
 const loading = ref(true)
 const error = ref('')
 const updatedAt = ref<number | undefined>()
@@ -39,6 +46,7 @@ async function fetchSessions(force = false) {
   try {
     sessions.value = await cachedSessions(props.cacheKey, props.load, { force })
     updatedAt.value = cachedAt(props.cacheKey)
+    if (props.loadSettlements) settlements.value = await props.loadSettlements()
   } catch (e) {
     error.value = e instanceof Error ? e.message : 'Laden fehlgeschlagen'
   } finally {
@@ -78,7 +86,10 @@ onMounted(() => fetchSessions())
       <p v-else-if="error" role="alert" class="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-600 dark:bg-red-950/40 dark:text-red-400">
         {{ error }}
       </p>
-      <UsageChart v-else :buckets="buckets" :granularity="granularity" :can-zoom="canZoom" @zoom="zoom" />
+      <UsageChart v-else :buckets="buckets" :granularity="granularity" 
+        :can-zoom="canZoom"
+        :settlements="settlements?.settlements"
+        @zoom="zoom" />
     </div>
 
     <div class="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-800 dark:bg-gray-900">
@@ -86,6 +97,11 @@ onMounted(() => fetchSessions())
         Ladevorgänge im Zeitraum ({{ visible.length }})
       </h3>
       <SessionTable :sessions="visible" />
+    </div>
+
+    <div v-if="settlements" class="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-800 dark:bg-gray-900">
+      <h3 class="mb-3 text-xs font-semibold tracking-wide text-gray-500 uppercase dark:text-gray-400">Abrechnungen</h3>
+      <SettlementTable :data="settlements" />
     </div>
   </section>
 </template>

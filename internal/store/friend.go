@@ -14,14 +14,68 @@ var ErrNotFound = errors.New("not found")
 // Friend is a person allowed to charge their vehicle, identified by a
 // permanent link (ID, used as the URL slug) protected by a PIN.
 type Friend struct {
-	ID                string    `json:"id"`
-	Name              string    `json:"name"`
-	VehicleName       string    `json:"vehicleName"` // EVCC config name
-	PINHash           string    `json:"pinHash"`
-	RateSolarPerKWh   float64   `json:"rateSolarPerKWh"`
-	RateGridPerKWh    float64   `json:"rateGridPerKWh"`
-	CreatedAt         time.Time `json:"createdAt"`
-	LinkRegeneratedAt time.Time `json:"linkRegeneratedAt"`
+	ID                string       `json:"id"`
+	Name              string       `json:"name"`
+	VehicleName       string       `json:"vehicleName"` // EVCC config name
+	PINHash           string       `json:"pinHash"`
+	RateSolarPerKWh   float64      `json:"rateSolarPerKWh"`
+	RateGridPerKWh    float64      `json:"rateGridPerKWh"`
+	CreatedAt         time.Time    `json:"createdAt"`
+	LinkRegeneratedAt time.Time    `json:"linkRegeneratedAt"`
+	Settlements       []Settlement `json:"settlements,omitempty"`
+}
+
+// Settlement marks the moment a friend paid for all charging up to At. Only
+// the timestamp is stored; amounts are derived from EVCC sessions between
+// consecutive settlements. Stored inside the Friend so a regenerated link
+// carries its history along and deleting the friend removes it.
+type Settlement struct {
+	ID string    `json:"id"`
+	At time.Time `json:"at"`
+}
+
+// AddSettlement appends a settlement to the friend's record.
+func (s *Store) AddSettlement(friendID string, st Settlement) error {
+	return s.db.Update(func(tx *bolt.Tx) error {
+		b := tx.Bucket([]byte(bucketFriends))
+		v := b.Get([]byte(friendID))
+		if v == nil {
+			return ErrNotFound
+		}
+		var f Friend
+		if err := json.Unmarshal(v, &f); err != nil {
+			return err
+		}
+		f.Settlements = append(f.Settlements, st)
+		return putJSON(b, f.ID, f)
+	})
+}
+
+// DeleteSettlement removes one settlement; ErrNotFound if friend or
+// settlement does not exist.
+func (s *Store) DeleteSettlement(friendID, settlementID string) error {
+	return s.db.Update(func(tx *bolt.Tx) error {
+		b := tx.Bucket([]byte(bucketFriends))
+		v := b.Get([]byte(friendID))
+		if v == nil {
+			return ErrNotFound
+		}
+		var f Friend
+		if err := json.Unmarshal(v, &f); err != nil {
+			return err
+		}
+		kept := f.Settlements[:0]
+		for _, st := range f.Settlements {
+			if st.ID != settlementID {
+				kept = append(kept, st)
+			}
+		}
+		if len(kept) == len(f.Settlements) {
+			return ErrNotFound
+		}
+		f.Settlements = kept
+		return putJSON(b, f.ID, f)
+	})
 }
 
 func (s *Store) CreateFriend(f Friend) error {

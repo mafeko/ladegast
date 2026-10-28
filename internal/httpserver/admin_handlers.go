@@ -30,6 +30,9 @@ func (s *Server) registerAdminRoutes(mux *http.ServeMux) {
 	mux.HandleFunc("POST "+s.adminPath("/friends/{id}/reset-pin"), s.requireAdmin(s.handleAdminResetPIN))
 	mux.HandleFunc("GET "+s.adminPath("/friends/{id}/view-as/dashboard"), s.requireAdmin(s.handleAdminViewAsDashboard))
 	mux.HandleFunc("GET "+s.adminPath("/friends/{id}/view-as/sessions"), s.requireAdmin(s.handleAdminViewAsSessions))
+	mux.HandleFunc("GET "+s.adminPath("/friends/{id}/view-as/settlements"), s.requireAdmin(s.handleAdminViewAsSettlements))
+	mux.HandleFunc("POST "+s.adminPath("/friends/{id}/settlements"), s.requireAdmin(s.handleAdminCreateSettlement))
+	mux.HandleFunc("DELETE "+s.adminPath("/friends/{id}/settlements/{sid}"), s.requireAdmin(s.handleAdminDeleteSettlement))
 }
 
 func (s *Server) requireAdmin(next http.HandlerFunc) http.HandlerFunc {

@@ -1,13 +1,14 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import { bucketLabel, bucketTitle, type Bucket, type Granularity } from '../lib/range'
-import { formatKWh, solarSharePercent } from '../lib/format'
+import { formatEUR, formatKWh, solarSharePercent } from '../lib/format'
+import type { Settlement } from '../lib/types'
 
-const props = defineProps<{ buckets: Bucket[]; granularity: Granularity; canZoom?: boolean }>()
+const props = defineProps<{ buckets: Bucket[]; granularity: Granularity; canZoom?: boolean; settlements?: Settlement[] }>()
 const emit = defineEmits<{ zoom: [bucket: Bucket] }>()
 
 const HEIGHT = 260
-const MARGIN = { top: 22, right: 8, bottom: 28, left: 44 }
+const MARGIN = { top: 36, right: 8, bottom: 28, left: 44 }
 
 const container = ref<HTMLElement | null>(null)
 const width = ref(600)
@@ -66,6 +67,23 @@ const tooltipLeft = computed(() => {
   return Math.min(Math.max(center, 90), Math.max(90, width.value - 90))
 })
 
+// Settlements inside the visible range become vertical lines, positioned
+// proportionally within the bucket they fall into.
+const settlementLines = computed(() => {
+  const lines: { id: string; x: number; label: string; row: number; anchor: 'start' | 'middle' | 'end' }[] = []
+  const list = [...(props.settlements ?? [])].sort((a, b) => a.at.localeCompare(b.at))
+  for (const s of list) {
+    const t = new Date(s.at).getTime()
+    const i = props.buckets.findIndex((b) => t >= b.start.getTime() && t < b.end.getTime())
+    if (i === -1) continue
+    const b = props.buckets[i]
+    const lx = MARGIN.left + band.value * (i + (t - b.start.getTime()) / (b.end.getTime() - b.start.getTime()))
+    const anchor = lx > width.value - 110 ? 'end' : lx < MARGIN.left + 60 ? 'start' : 'middle'
+    lines.push({ id: s.id, x: lx, label: `Abrechnung · ${formatEUR(s.amountEUR)}`, row: lines.length % 2, anchor })
+  }
+  return lines
+})
+
 function describe(b: Bucket): string {
   return `${bucketTitle(b, props.granularity)}: Netz ${formatKWh(b.gridKWh)}, Sonne ${formatKWh(b.solarKWh)}, gesamt ${formatKWh(total(b))}`
 }
@@ -84,6 +102,7 @@ function onZoom() {
         <span v-if="hasData" class="text-gray-500 dark:text-gray-400">· {{ solarSharePercent(sum.solar, sum.total) }}% Sonne</span>
       </p>
       <ul class="flex gap-4 text-xs text-gray-600 dark:text-gray-300">
+        <li v-if="settlementLines.length" class="flex items-center gap-1.5"><span class="inline-block h-3 border-l-2 border-dashed border-emerald-600 dark:border-emerald-400"></span>Abrechnung</li>
         <li class="flex items-center gap-1.5"><span class="inline-block size-3 rounded-sm bg-amber-400"></span>Sonne</li>
         <li class="flex items-center gap-1.5"><span class="inline-block size-3 rounded-sm bg-slate-500 dark:bg-slate-400"></span>Netz</li>
       </ul>
@@ -144,6 +163,11 @@ function onZoom() {
             @focus="active = i"
             @click="active = i"
           />
+        </g>
+
+        <g v-for="l in settlementLines" :key="l.id" data-testid="settlement-line" class="pointer-events-none text-emerald-600 dark:text-emerald-400">
+          <line :x1="l.x" :x2="l.x" :y1="16 + l.row * 12" :y2="MARGIN.top + innerH" stroke="currentColor" stroke-width="2" stroke-dasharray="4 3" />
+          <text :x="l.x" :y="12 + l.row * 12" :text-anchor="l.anchor" fill="currentColor" class="text-[11px] font-medium">{{ l.label }}</text>
         </g>
       </svg>
 

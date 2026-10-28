@@ -1,10 +1,11 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue'
-import { getDashboard, getSessions, friendLogout } from '../lib/api'
+import { getDashboard, getSessions, getSettlements, friendLogout } from '../lib/api'
 import type { Dashboard } from '../lib/types'
 import SummaryCard from './SummaryCard.vue'
 import UsageExplorer from './UsageExplorer.vue'
-import ModeSwitch from './ModeSwitch.vue'
+// Charge mode switching (Schnell laden / Smart laden) is disabled for now.
+// import ModeSwitch from './ModeSwitch.vue'
 
 const props = defineProps<{ uuid: string }>()
 const emit = defineEmits<{ loggedOut: [] }>()
@@ -54,16 +55,22 @@ defineExpose({ load })
       {{ error }}
     </p>
     <template v-else-if="dashboard">
+      <!-- Charge mode switching disabled for now (needs more development time)
       <div class="mb-6 rounded-2xl border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-800 dark:bg-gray-900">
         <ModeSwitch :uuid="props.uuid" @changed="load(true)" />
       </div>
+      -->
       <div class="mb-6 grid grid-cols-2 gap-4 sm:grid-cols-4">
         <SummaryCard title="Heute" :summary="dashboard.today" />
         <SummaryCard title="Diese Woche" :summary="dashboard.thisWeek" />
         <SummaryCard title="Dieser Monat" :summary="dashboard.thisMonth" />
         <SummaryCard title="Dieses Jahr" :summary="dashboard.thisYear" />
       </div>
-      <UsageExplorer :cache-key="`friend:${props.uuid}`" :load="() => getSessions(props.uuid)" />
+      <UsageExplorer
+        :cache-key="`friend:${props.uuid}`"
+        :load="() => getSessions(props.uuid)"
+        :load-settlements="() => getSettlements(props.uuid)"
+      />
     </template>
   </div>
 </template>

@@ -61,3 +61,22 @@ describe('UsageChart', () => {
     expect(wrapper.find('rect[role="button"]').attributes('aria-label')).toContain('Netz 0,00 kWh')
   })
 })
+
+describe('UsageChart settlements', () => {
+  it('draws a labelled line only for settlements inside the range', () => {
+    const wrapper = mount(UsageChart, {
+      props: {
+        buckets: buckets(),
+        granularity: 'day',
+        settlements: [
+          { id: 'in', at: new Date(2026, 9, 21, 12).toISOString(), chargedKWh: 5, amountEUR: 12.5 },
+          { id: 'out', at: new Date(2025, 0, 1).toISOString(), chargedKWh: 5, amountEUR: 99 },
+        ],
+      },
+    })
+    const lines = wrapper.findAll('[data-testid="settlement-line"]')
+    expect(lines).toHaveLength(1)
+    expect(lines[0].text()).toContain('Abrechnung')
+    expect(lines[0].text()).toContain('12,50')
+  })
+})

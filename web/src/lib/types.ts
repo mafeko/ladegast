@@ -65,3 +65,22 @@ export interface RegeneratedLink {
   id: string
   link: string
 }
+
+export interface Settlement {
+  id: string
+  at: string
+  chargedKWh: number
+  amountEUR: number
+}
+
+/** Charged since the last settlement (or ever) and still unpaid. */
+export interface OpenAmount {
+  since: string | null
+  chargedKWh: number
+  amountEUR: number
+}
+
+export interface Settlements {
+  settlements: Settlement[]
+  open: OpenAmount
+}

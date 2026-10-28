@@ -2,6 +2,7 @@
 import { ref } from 'vue'
 import { deleteFriend, regenerateLink, resetPin, updateFriend } from '../lib/api'
 import type { Friend } from '../lib/types'
+import AdminSettlements from './AdminSettlements.vue'
 import CopyButton from './CopyButton.vue'
 
 const props = defineProps<{ friend: Friend }>()
@@ -20,6 +21,7 @@ const newPin = ref('')
 const error = ref('')
 const pinFormOpen = ref(false)
 const pinInput = ref('')
+const settlementsOpen = ref(false)
 
 function resetFeedback() {
   error.value = ''
@@ -112,6 +114,9 @@ const cellClass =
       <CopyButton :text="friend.link" label="Link kopieren" />
       <button type="button" :class="buttonClass" @click="onRegenerateLink">Link neu</button>
       <button type="button" :class="buttonClass" @click="pinFormOpen = !pinFormOpen">PIN ändern</button>
+      <button type="button" :class="buttonClass" :aria-expanded="settlementsOpen" @click="settlementsOpen = !settlementsOpen">
+        Abrechnung
+      </button>
       <RouterLink :to="`/admin/view-as/${friend.id}`" class="text-xs font-medium text-indigo-600 hover:underline dark:text-indigo-400">
         Ansehen als
       </RouterLink>
@@ -124,7 +129,7 @@ const cellClass =
       </button>
     </td>
   </tr>
-  <tr v-if="pinFormOpen || message || newPin || error" class="block md:table-row">
+  <tr v-if="pinFormOpen || settlementsOpen || message || newPin || error" class="block md:table-row">
     <td colspan="5" class="block space-y-2 px-3 pb-3 md:table-cell">
       <form v-if="pinFormOpen" class="flex flex-wrap items-center gap-2" @submit.prevent="setPin(pinInput)">
         <input
@@ -145,6 +150,7 @@ const cellClass =
         <button type="button" :class="buttonClass" @click="setPin()">Zufällige PIN</button>
         <button type="button" :class="buttonClass" @click="pinFormOpen = false">Abbrechen</button>
       </form>
+      <AdminSettlements v-if="settlementsOpen" :friend-id="friend.id" :friend-name="friend.name" />
       <p v-if="message" class="text-sm text-gray-500 dark:text-gray-400">{{ message }}</p>
       <div v-if="newPin" class="flex flex-wrap items-center gap-3 rounded-lg bg-indigo-600 px-4 py-3 text-white">
         <span class="text-sm">Neue PIN für {{ friend.name }}:</span>
