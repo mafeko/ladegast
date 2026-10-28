@@ -36,9 +36,9 @@ onMounted(checkStatus)
 
 <template>
   <main>
-    <div v-if="checking" class="flex min-h-screen items-center justify-center text-sm text-gray-500 dark:text-gray-400">Lade...</div>
-    <div v-else-if="notFound" class="flex min-h-screen items-center justify-center px-4">
-      <div class="w-full max-w-sm rounded-2xl border border-gray-200 bg-white p-8 shadow-sm dark:border-gray-800 dark:bg-gray-900">
+    <div v-if="checking" class="flex min-h-dvh items-center justify-center text-sm text-gray-500 dark:text-gray-400">Lade...</div>
+    <div v-else-if="notFound" class="flex min-h-dvh items-center justify-center px-4">
+      <div class="w-full max-w-sm rounded-2xl border border-gray-200 bg-white p-6 shadow-sm sm:p-8 dark:border-gray-800 dark:bg-gray-900">
         <h1 class="text-lg font-semibold tracking-tight">Link ungültig</h1>
         <p class="mt-2 text-sm text-gray-500 dark:text-gray-400">
           Dieser Link existiert nicht mehr oder wurde erneuert. Frag die Person, die ihn dir gegeben hat, nach dem aktuellen Link.

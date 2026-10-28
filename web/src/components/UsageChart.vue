@@ -95,13 +95,13 @@ function onZoom() {
 
 <template>
   <div>
-    <div class="mb-3 flex flex-wrap items-center justify-between gap-2 text-sm">
+    <div class="mb-3 flex flex-col gap-2 text-sm sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
       <p class="text-gray-600 dark:text-gray-300">
         <span class="font-semibold text-gray-900 dark:text-gray-100">{{ formatKWh(sum.total) }}</span>
         gesamt
         <span v-if="hasData" class="text-gray-500 dark:text-gray-400">· {{ solarSharePercent(sum.solar, sum.total) }}% Sonne</span>
       </p>
-      <ul class="flex gap-4 text-xs text-gray-600 dark:text-gray-300">
+      <ul class="flex flex-wrap gap-x-4 gap-y-1 text-xs text-gray-600 dark:text-gray-300">
         <li v-if="settlementLines.length" class="flex items-center gap-1.5"><span class="inline-block h-3 border-l-2 border-dashed border-emerald-600 dark:border-emerald-400"></span>Abrechnung</li>
         <li class="flex items-center gap-1.5"><span class="inline-block size-3 rounded-sm bg-amber-400"></span>Sonne</li>
         <li class="flex items-center gap-1.5"><span class="inline-block size-3 rounded-sm bg-slate-500 dark:bg-slate-400"></span>Netz</li>
@@ -178,7 +178,7 @@ function onZoom() {
       <div
         v-if="activeBucket"
         role="status"
-        class="absolute top-0 z-10 w-44 -translate-x-1/2 rounded-lg border border-gray-200 bg-white px-3 py-2 text-xs shadow-lg dark:border-gray-700 dark:bg-gray-900"
+        class="absolute top-0 z-10 w-48 -translate-x-1/2 rounded-lg border border-gray-200 bg-white px-3 py-2 text-xs shadow-lg dark:border-gray-700 dark:bg-gray-900"
         :style="{ left: tooltipLeft + 'px' }"
       >
         <p class="mb-1 font-semibold">{{ bucketTitle(activeBucket, granularity) }}</p>
@@ -190,7 +190,7 @@ function onZoom() {
         <button
           v-if="canZoom && total(activeBucket) > 0"
           type="button"
-          class="mt-2 w-full rounded-md bg-indigo-600 px-2 py-1 text-white hover:bg-indigo-500"
+          class="mt-2 min-h-10 w-full rounded-md bg-indigo-600 px-2 py-1 text-white sm:min-h-0 hover:bg-indigo-500"
           @click="onZoom"
         >
           Hineinzoomen

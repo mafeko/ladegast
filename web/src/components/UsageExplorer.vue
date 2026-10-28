@@ -78,13 +78,13 @@ onMounted(() => fetchSessions())
 
 <template>
   <section class="space-y-6">
-    <div class="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-800 dark:bg-gray-900">
-      <div class="mb-4 flex flex-wrap items-center justify-between gap-3">
+    <div class="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm sm:p-6 dark:border-gray-800 dark:bg-gray-900">
+      <div class="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <TimeRangePicker v-model="range" />
         <button
           type="button"
           :disabled="loading"
-          class="rounded-lg border border-gray-300 bg-white px-3 py-2 text-xs font-medium text-gray-700 transition hover:bg-gray-50 disabled:opacity-50 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 dark:hover:bg-gray-800"
+          class="rounded-lg border border-gray-300 bg-white min-h-11 px-3 py-2 text-xs font-medium sm:min-h-0 text-gray-700 transition hover:bg-gray-50 disabled:opacity-50 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 dark:hover:bg-gray-800"
           :title="updatedLabel ? `Stand ${updatedLabel} Uhr` : undefined"
           @click="refresh"
         >
@@ -101,14 +101,14 @@ onMounted(() => fetchSessions())
         @zoom="zoom" />
     </div>
 
-    <div class="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-800 dark:bg-gray-900">
+    <div class="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm sm:p-6 dark:border-gray-800 dark:bg-gray-900">
       <h3 class="mb-3 text-xs font-semibold tracking-wide text-gray-500 uppercase dark:text-gray-400">
         Ladevorgänge im Zeitraum ({{ visible.length }})
       </h3>
       <SessionTable :sessions="visible" />
     </div>
 
-    <div v-if="settlements" class="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-800 dark:bg-gray-900">
+    <div v-if="settlements" class="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm sm:p-6 dark:border-gray-800 dark:bg-gray-900">
       <h3 class="mb-3 text-xs font-semibold tracking-wide text-gray-500 uppercase dark:text-gray-400">Abrechnungen</h3>
       <SettlementTable :data="settlements" />
     </div>

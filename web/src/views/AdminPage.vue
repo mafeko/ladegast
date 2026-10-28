@@ -84,20 +84,20 @@ onMounted(loadFriends)
 
 <template>
   <main>
-    <div v-if="checking" class="flex min-h-screen items-center justify-center text-sm text-gray-500 dark:text-gray-400">Lade...</div>
+    <div v-if="checking" class="flex min-h-dvh items-center justify-center text-sm text-gray-500 dark:text-gray-400">Lade...</div>
     <AdminLogin v-else-if="!authenticated" @success="onLoginSuccess" />
-    <div v-else class="mx-auto max-w-5xl px-4 py-10">
+    <div v-else class="mx-auto max-w-5xl px-4 py-6 sm:py-10">
       <div class="mb-6 flex items-center justify-between gap-4">
-        <h1 class="text-2xl font-semibold tracking-tight">Freunde verwalten</h1>
+        <h1 class="text-xl font-semibold sm:text-2xl tracking-tight">Freunde verwalten</h1>
         <button
           type="button"
-          class="rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 dark:hover:bg-gray-800"
+          class="rounded-lg border border-gray-300 bg-white min-h-11 px-4 py-2 text-sm font-medium sm:min-h-0 text-gray-700 transition hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 dark:hover:bg-gray-800"
           @click="logout"
         >
           Abmelden
         </button>
       </div>
-      <div class="mb-6 rounded-2xl border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-800 dark:bg-gray-900">
+      <div class="mb-6 rounded-2xl border border-gray-200 bg-white p-4 shadow-sm sm:p-6 dark:border-gray-800 dark:bg-gray-900">
         <h3 class="mb-4 text-xs font-semibold tracking-wide text-gray-500 uppercase dark:text-gray-400">Neuen Freund anlegen</h3>
         <AdminFriendForm @created="onCreated" />
       </div>
@@ -120,7 +120,7 @@ onMounted(loadFriends)
           <CopyButton :text="noticeLink" label="Link kopieren" on-color />
         </template>
       </div>
-      <div class="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-800 dark:bg-gray-900">
+      <div class="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm sm:p-6 dark:border-gray-800 dark:bg-gray-900">
         <table class="block w-full text-left text-sm md:table">
           <thead class="hidden md:table-header-group">
             <tr class="border-b border-gray-200 text-xs font-semibold tracking-wide text-gray-500 uppercase dark:border-gray-800 dark:text-gray-400">
