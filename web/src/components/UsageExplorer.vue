@@ -46,11 +46,20 @@ async function fetchSessions(force = false) {
   try {
     sessions.value = await cachedSessions(props.cacheKey, props.load, { force })
     updatedAt.value = cachedAt(props.cacheKey)
-    if (props.loadSettlements) settlements.value = await props.loadSettlements()
   } catch (e) {
     error.value = e instanceof Error ? e.message : 'Laden fehlgeschlagen'
   } finally {
     loading.value = false
+  }
+  // Settlements are decoration: failing or empty must never block the chart.
+  settlements.value = null
+  if (props.loadSettlements) {
+    try {
+      const data = await props.loadSettlements()
+      settlements.value = { ...data, settlements: data.settlements ?? [] }
+    } catch {
+      /* chart and sessions stay usable without settlements */
+    }
   }
 }
 

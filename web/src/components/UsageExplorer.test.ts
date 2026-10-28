@@ -85,3 +85,33 @@ describe('range helper used by explorer', () => {
     expect(r.to.getDate()).toBe(1)
   })
 })
+
+describe('UsageExplorer without settlements', () => {
+  it('renders chart and table when the friend has no settlement yet', async () => {
+    const load = vi.fn().mockResolvedValue([sessionIn(0, 2)])
+    const loadSettlements = vi.fn().mockResolvedValue({ settlements: [], open: { since: null, chargedKWh: 5, amountEUR: 1 } })
+    const wrapper = mount(UsageExplorer, { props: { cacheKey: 'ns', load, loadSettlements } })
+    await flush()
+    expect(wrapper.find('svg').exists()).toBe(true)
+    expect(wrapper.text()).not.toContain('Laden fehlgeschlagen')
+  })
+
+  it('tolerates a null settlements list', async () => {
+    const load = vi.fn().mockResolvedValue([sessionIn(0, 2)])
+    const loadSettlements = vi.fn().mockResolvedValue({ settlements: null, open: { since: null, chargedKWh: 0, amountEUR: 0 } })
+    const wrapper = mount(UsageExplorer, { props: { cacheKey: 'ns2', load, loadSettlements } })
+    await flush()
+    expect(wrapper.find('svg').exists()).toBe(true)
+  })
+})
+
+describe('UsageExplorer settlements failure', () => {
+  it('still renders the chart when loading settlements fails', async () => {
+    const load = vi.fn().mockResolvedValue([sessionIn(0, 2)])
+    const loadSettlements = vi.fn().mockRejectedValue(new Error('boom'))
+    const wrapper = mount(UsageExplorer, { props: { cacheKey: 'ns3', load, loadSettlements } })
+    await flush()
+    expect(wrapper.find('svg').exists()).toBe(true)
+    expect(wrapper.text()).not.toContain('boom')
+  })
+})

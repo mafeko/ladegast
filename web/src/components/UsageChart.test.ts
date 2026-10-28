@@ -80,3 +80,11 @@ describe('UsageChart settlements', () => {
     expect(lines[0].text()).toContain('12,50')
   })
 })
+
+describe('UsageChart without settlements', () => {
+  it.each([undefined, null, []])('renders with settlements=%s', (settlements) => {
+    const wrapper = mount(UsageChart, { props: { buckets: buckets(), granularity: 'day', settlements: settlements as never } })
+    expect(wrapper.findAll('rect[class*="fill-"]').length).toBeGreaterThan(0)
+    expect(wrapper.findAll('[data-testid="settlement-line"]')).toHaveLength(0)
+  })
+})
