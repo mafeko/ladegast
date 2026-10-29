@@ -1,6 +1,6 @@
 {
   "name": "ladegast",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "private": true,
   "description": "Release manifest and commit tooling. The version is managed by semantic-release; do not edit by hand.",
   "license": "UNLICENSED",

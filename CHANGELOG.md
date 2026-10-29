@@ -1,3 +1,10 @@
+# [1.2.0](https://github.com/mafeko/ladegast/compare/v1.1.0...v1.2.0) (2026-10-29)
+
+
+### Features
+
+* **web:** settlements in session table, totals and solar/grid split in settlement table ([41cbae8](https://github.com/mafeko/ladegast/commit/41cbae80fe4ab14b5b23cdefd327ca0055bf82de))
+
 # [1.1.0](https://github.com/mafeko/ladegast/compare/v1.0.0...v1.1.0) (2026-10-29)
 
 
