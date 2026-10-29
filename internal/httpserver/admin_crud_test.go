@@ -170,3 +170,30 @@ func TestAdminDeleteFriend_RequiresAdmin(t *testing.T) {
 		t.Errorf("unauthenticated delete = %d, want 401", resp.StatusCode)
 	}
 }
+
+func TestAdminListVehicles_OnlyUnassignedFromSessions(t *testing.T) {
+	client, base := adminClient(t)
+
+	resp := doJSON(t, client, http.MethodGet, base+"/admin/vehicles", "")
+	var names []string
+	mustDecode(t, resp, &names)
+	if len(names) != 2 || names[0] != "other_vehicle" || names[1] != "vehicle_1" {
+		t.Fatalf("vehicles = %v, want [other_vehicle vehicle_1]", names)
+	}
+
+	createFriendVia(t, client, base, createFriendRequest{Name: "Alex", VehicleName: "vehicle_1"})
+	resp = doJSON(t, client, http.MethodGet, base+"/admin/vehicles", "")
+	names = nil
+	mustDecode(t, resp, &names)
+	if len(names) != 1 || names[0] != "other_vehicle" {
+		t.Fatalf("vehicles after assign = %v, want [other_vehicle]", names)
+	}
+}
+
+func TestAdminListVehicles_RequiresAdmin(t *testing.T) {
+	_, base := adminClient(t)
+	resp := doJSON(t, newClientWithJar(t), http.MethodGet, base+"/admin/vehicles", "")
+	if resp.StatusCode != http.StatusUnauthorized {
+		t.Fatalf("status = %d, want 401", resp.StatusCode)
+	}
+}

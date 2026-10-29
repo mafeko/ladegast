@@ -112,6 +112,11 @@ export function listFriends(): Promise<Friend[]> {
   return request('GET', `${ADMIN_PREFIX}/friends`)
 }
 
+/** EVCC vehicle names seen in sessions and not yet assigned to a friend. */
+export function listVehicles(): Promise<string[]> {
+  return request('GET', `${ADMIN_PREFIX}/vehicles`)
+}
+
 export function createFriend(input: CreateFriendInput): Promise<CreatedFriend> {
   return request('POST', `${ADMIN_PREFIX}/friends`, input)
 }
