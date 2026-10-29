@@ -38,3 +38,12 @@ describe('SessionTable total', () => {
     expect(wrapper.find('tfoot').exists()).toBe(false)
   })
 })
+
+describe('SessionTable header', () => {
+  it('uses icons instead of long titles', () => {
+    const wrapper = mount(SessionTable, { props: { sessions: [] } })
+    const head = wrapper.find('thead')
+    for (const icon of ['car', 'sun', 'plug', 'euro']) expect(head.find(`[data-icon="${icon}"]`).exists()).toBe(true)
+    expect(head.text()).not.toMatch(/Geladen|Sonne|Netz|Kosten/)
+  })
+})
