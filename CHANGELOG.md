@@ -1,3 +1,16 @@
+# [1.1.0](https://github.com/mafeko/ladegast/compare/v1.0.0...v1.1.0) (2026-10-29)
+
+
+### Bug Fixes
+
+* **web:** spread settlement labels over lanes so they never overlap ([a4e60e6](https://github.com/mafeko/ladegast/commit/a4e60e60ab1232852ac158e705f61a23cbdb5898))
+
+
+### Features
+
+* **web:** compact icon-header session table on mobile ([5f74252](https://github.com/mafeko/ladegast/commit/5f742523e9e3b2bb17f7d47a967e2a83e9a70124))
+* **web:** price info card, kWh with one decimal and small unit in table ([d6f2192](https://github.com/mafeko/ladegast/commit/d6f2192dae48f62441f0d045600cf7e5f8584898))
+
 # 1.0.0 (2026-10-29)
 
 
