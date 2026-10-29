@@ -21,7 +21,7 @@ describe('FriendPage', () => {
   it('shows the dashboard when already authenticated', async () => {
     vi.mocked(api.getFriendStatus).mockResolvedValue({ authenticated: true })
     vi.mocked(api.getDashboard).mockResolvedValue({
-      friend: { id: 'abc', name: 'Alex' },
+      friend: { id: 'abc', name: 'Alex', rateSolarPerKWh: 0.1, rateGridPerKWh: 0.3 },
       today: { chargedKWh: 0, solarKWh: 0, gridKWh: 0, costEUR: 0 },
       thisWeek: { chargedKWh: 0, solarKWh: 0, gridKWh: 0, costEUR: 0 },
       thisMonth: { chargedKWh: 0, solarKWh: 0, gridKWh: 0, costEUR: 0 },
@@ -39,7 +39,7 @@ describe('FriendPage', () => {
     vi.mocked(api.getFriendStatus).mockResolvedValue({ authenticated: false })
     vi.mocked(api.friendLogin).mockResolvedValue({ name: 'Alex' })
     vi.mocked(api.getDashboard).mockResolvedValue({
-      friend: { id: 'abc', name: 'Alex' },
+      friend: { id: 'abc', name: 'Alex', rateSolarPerKWh: 0.1, rateGridPerKWh: 0.3 },
       today: { chargedKWh: 0, solarKWh: 0, gridKWh: 0, costEUR: 0 },
       thisWeek: { chargedKWh: 0, solarKWh: 0, gridKWh: 0, costEUR: 0 },
       thisMonth: { chargedKWh: 0, solarKWh: 0, gridKWh: 0, costEUR: 0 },

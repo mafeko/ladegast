@@ -6,7 +6,7 @@ import * as api from '../lib/api'
 vi.mock('../lib/api')
 
 const dashboard = {
-  friend: { id: 'abc', name: 'Alex' },
+  friend: { id: 'abc', name: 'Alex', rateSolarPerKWh: 0.1, rateGridPerKWh: 0.3 },
   today: { chargedKWh: 1, solarKWh: 1, gridKWh: 0, costEUR: 0.1 },
   thisWeek: { chargedKWh: 2, solarKWh: 1, gridKWh: 1, costEUR: 0.5 },
   thisMonth: { chargedKWh: 3, solarKWh: 2, gridKWh: 1, costEUR: 0.8 },

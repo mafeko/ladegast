@@ -12,7 +12,7 @@ async function flushMicrotasks() {
 describe('AdminViewAsPage', () => {
   it('loads and renders the dashboard for the given friend id', async () => {
     vi.mocked(api.viewAsDashboard).mockResolvedValue({
-      friend: { id: '1', name: 'Alex' },
+      friend: { id: '1', name: 'Alex', rateSolarPerKWh: 0.1, rateGridPerKWh: 0.3 },
       today: { chargedKWh: 1, solarKWh: 1, gridKWh: 0, costEUR: 0.1 },
       thisWeek: { chargedKWh: 1, solarKWh: 1, gridKWh: 0, costEUR: 0.1 },
       thisMonth: { chargedKWh: 1, solarKWh: 1, gridKWh: 0, costEUR: 0.1 },

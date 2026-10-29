@@ -3,6 +3,7 @@ import { onMounted, ref } from 'vue'
 import { getDashboard, getSessions, getSettlements, friendLogout } from '../lib/api'
 import type { Dashboard } from '../lib/types'
 import SummaryCard from './SummaryCard.vue'
+import PriceInfo from './PriceInfo.vue'
 import UsageExplorer from './UsageExplorer.vue'
 // Charge mode switching (Schnell laden / Smart laden) is disabled for now.
 // import ModeSwitch from './ModeSwitch.vue'
@@ -66,6 +67,7 @@ defineExpose({ load })
         <SummaryCard title="Dieser Monat" :summary="dashboard.thisMonth" />
         <SummaryCard title="Dieses Jahr" :summary="dashboard.thisYear" />
       </div>
+      <PriceInfo :friend="dashboard.friend" />
       <UsageExplorer
         :cache-key="`friend:${props.uuid}`"
         :load="() => getSessions(props.uuid)"

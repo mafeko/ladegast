@@ -39,7 +39,7 @@ describe('UsageExplorer', () => {
     await wrapper.find('button[aria-label="Voriger Zeitraum"]').trigger('click')
 
     expect(wrapper.text()).toContain('(3)')
-    expect(wrapper.text()).toContain('15,00 kWh gesamt')
+    expect(wrapper.text()).toContain('15,0 kWh gesamt')
     expect(load).toHaveBeenCalledTimes(1)
   })
 
@@ -75,7 +75,7 @@ describe('UsageExplorer', () => {
     await wrapper.findAll('button').find((b) => b.text() === 'Hineinzoomen')!.trigger('click')
 
     expect(wrapper.findAll('rect[role="button"]')).toHaveLength(24)
-    expect(wrapper.text()).toContain('8,00 kWh gesamt')
+    expect(wrapper.text()).toContain('8,0 kWh gesamt')
   })
 })
 

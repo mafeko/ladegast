@@ -3,6 +3,7 @@ import { onMounted, ref } from 'vue'
 import { viewAsDashboard, viewAsSessions, viewAsSettlements } from '../lib/api'
 import type { Dashboard } from '../lib/types'
 import SummaryCard from '../components/SummaryCard.vue'
+import PriceInfo from '../components/PriceInfo.vue'
 import UsageExplorer from '../components/UsageExplorer.vue'
 
 const props = defineProps<{ id: string }>()
@@ -43,6 +44,7 @@ onMounted(load)
         <SummaryCard title="Dieser Monat" :summary="dashboard.thisMonth" />
         <SummaryCard title="Dieses Jahr" :summary="dashboard.thisYear" />
       </div>
+      <PriceInfo :friend="dashboard.friend" />
       <UsageExplorer
         :cache-key="`admin:${props.id}`"
         :load="() => viewAsSessions(props.id)"
