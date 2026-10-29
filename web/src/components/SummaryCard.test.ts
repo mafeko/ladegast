@@ -11,7 +11,7 @@ describe('SummaryCard', () => {
       },
     })
     expect(wrapper.text()).toContain('Heute')
-    expect(wrapper.text()).toContain('10,00 kWh')
+    expect(wrapper.text()).toContain('10,0 kWh')
     expect(wrapper.text()).toContain('50%')
     expect(wrapper.text()).toContain('2,25')
   })

@@ -110,8 +110,10 @@ type dashboard struct {
 }
 
 type friendInfo struct {
-	ID   string `json:"id"`
-	Name string `json:"name"`
+	ID              string  `json:"id"`
+	Name            string  `json:"name"`
+	RateSolarPerKWh float64 `json:"rateSolarPerKWh"`
+	RateGridPerKWh  float64 `json:"rateGridPerKWh"`
 }
 
 func (s *Server) dashboardSummary(r *http.Request, friend store.Friend) (dashboard, error) {
@@ -133,7 +135,7 @@ func (s *Server) dashboardSummary(r *http.Request, friend store.Friend) (dashboa
 	}
 
 	return dashboard{
-		Friend:    friendInfo{ID: friend.ID, Name: friend.Name},
+		Friend:    friendInfo{ID: friend.ID, Name: friend.Name, RateSolarPerKWh: friend.RateSolarPerKWh, RateGridPerKWh: friend.RateGridPerKWh},
 		Today:     summarize(startOfDay(now)),
 		ThisWeek:  summarize(startOfWeek(now)),
 		ThisMonth: summarize(startOfMonth(now)),

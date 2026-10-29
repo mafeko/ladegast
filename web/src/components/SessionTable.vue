@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import type { SessionView } from '../lib/types'
-import { formatDateTime, formatEUR, formatKWh } from '../lib/format'
+import { formatDateTime, formatEUR, formatKWhValue } from '../lib/format'
 
 const props = defineProps<{ sessions: SessionView[] }>()
 
@@ -20,19 +20,18 @@ function formatShort(iso: string): string {
   return Number.isNaN(d.getTime()) ? iso : shortFormat.format(d).replace(',', '')
 }
 
-// Phones show bare numbers (the header icons carry the unit); sm+ adds "kWh".
-const num = (kwh: number) => formatKWh(kwh).replace(' kWh', '')
+const num = formatKWhValue
 const eur = (v: number) => formatEUR(v).replace(/\s*€/, '')
 
-const th = 'px-1 py-2 text-right font-semibold sm:px-3'
-const td = 'px-1 py-2 text-right whitespace-nowrap tabular-nums sm:px-3'
+const th = 'px-0.5 py-2 text-right font-semibold sm:px-3'
+const td = 'px-0.5 py-2 text-right whitespace-nowrap tabular-nums sm:px-3'
 </script>
 
 <template>
-  <table class="w-full table-fixed text-xs sm:table-auto sm:text-sm">
+  <table class="w-full table-fixed text-[11px] sm:table-auto sm:text-sm">
     <thead>
       <tr class="border-b border-gray-200 text-xs text-gray-500 dark:border-gray-800 dark:text-gray-400">
-        <th class="w-[31%] px-1 py-2 text-left font-semibold tracking-wide uppercase sm:w-auto sm:px-3">Datum</th>
+        <th class="w-[25%] px-0.5 py-2 text-left font-semibold tracking-wide uppercase sm:w-auto sm:px-3">Datum</th>
         <th :class="th" title="Geladen (kWh)" aria-label="Geladen (kWh)">
           <svg viewBox="0 0 24 24" class="ml-auto size-4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" data-icon="car">
             <path d="M5 17h14M3 13l2-6a2 2 0 0 1 2-1.5h10a2 2 0 0 1 2 1.5l2 6v4H3z" />
@@ -56,13 +55,13 @@ const td = 'px-1 py-2 text-right whitespace-nowrap tabular-nums sm:px-3'
     </thead>
     <tbody>
       <tr v-for="(s, i) in sessions" :key="i" class="border-b border-gray-100 last:border-0 dark:border-gray-800">
-        <td class="px-1 py-2 whitespace-nowrap sm:px-3">
+        <td class="px-0.5 py-2 whitespace-nowrap sm:px-3">
           <span class="sm:hidden">{{ formatShort(s.created) }}</span>
           <span class="hidden sm:inline">{{ formatDateTime(s.created) }}</span>
         </td>
-        <td :class="td">{{ num(s.chargedKWh) }}<span class="hidden sm:inline"> kWh</span></td>
-        <td :class="td">{{ num(s.solarKWh) }}<span class="hidden sm:inline"> kWh</span></td>
-        <td :class="td">{{ num(s.gridKWh) }}<span class="hidden sm:inline"> kWh</span></td>
+        <td :class="td">{{ num(s.chargedKWh) }}<span class="ml-0.5 text-[9px] font-normal sm:text-[10px] text-gray-500 dark:text-gray-400">kWh</span></td>
+        <td :class="td">{{ num(s.solarKWh) }}<span class="ml-0.5 text-[9px] font-normal sm:text-[10px] text-gray-500 dark:text-gray-400">kWh</span></td>
+        <td :class="td">{{ num(s.gridKWh) }}<span class="ml-0.5 text-[9px] font-normal sm:text-[10px] text-gray-500 dark:text-gray-400">kWh</span></td>
         <td :class="td">{{ eur(s.costEUR) }}<span class="hidden sm:inline"> €</span></td>
       </tr>
       <tr v-if="sessions.length === 0">
@@ -71,10 +70,10 @@ const td = 'px-1 py-2 text-right whitespace-nowrap tabular-nums sm:px-3'
     </tbody>
     <tfoot v-if="sessions.length > 0">
       <tr data-testid="session-total" class="border-t border-gray-300 font-semibold dark:border-gray-700">
-        <td class="px-1 py-2 sm:px-3">Gesamt</td>
-        <td :class="td">{{ num(total.chargedKWh) }}<span class="hidden sm:inline"> kWh</span></td>
-        <td :class="td">{{ num(total.solarKWh) }}<span class="hidden sm:inline"> kWh</span></td>
-        <td :class="td">{{ num(total.gridKWh) }}<span class="hidden sm:inline"> kWh</span></td>
+        <td class="px-0.5 py-2 sm:px-3">Gesamt</td>
+        <td :class="td">{{ num(total.chargedKWh) }}<span class="ml-0.5 text-[9px] font-normal sm:text-[10px] text-gray-500 dark:text-gray-400">kWh</span></td>
+        <td :class="td">{{ num(total.solarKWh) }}<span class="ml-0.5 text-[9px] font-normal sm:text-[10px] text-gray-500 dark:text-gray-400">kWh</span></td>
+        <td :class="td">{{ num(total.gridKWh) }}<span class="ml-0.5 text-[9px] font-normal sm:text-[10px] text-gray-500 dark:text-gray-400">kWh</span></td>
         <td :class="td">{{ eur(total.costEUR) }}<span class="hidden sm:inline"> €</span></td>
       </tr>
     </tfoot>

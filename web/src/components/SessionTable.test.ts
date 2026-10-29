@@ -12,7 +12,7 @@ describe('SessionTable', () => {
       },
     })
     expect(wrapper.findAll('tbody tr')).toHaveLength(1)
-    expect(wrapper.text()).toContain('5,00 kWh')
+    expect(wrapper.text()).toContain('5,0')
   })
 
   it('shows an empty state when there are no sessions', () => {
@@ -29,7 +29,7 @@ describe('SessionTable total', () => {
   it('sums all visible sessions below the table', () => {
     const wrapper = mount(SessionTable, { props: { sessions: [s(4, 1.5), s(6, 2)] } })
     const total = wrapper.find('tfoot [data-testid="session-total"]')
-    expect(total.text()).toContain('10,00 kWh')
+    expect(total.text()).toContain('10,0')
     expect(total.text()).toContain('3,50')
   })
 

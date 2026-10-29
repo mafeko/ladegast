@@ -1,9 +1,14 @@
 // Small presentation helpers shared by the dashboard views.
 
-const kWhFormat = new Intl.NumberFormat('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+const kWhFormat = new Intl.NumberFormat('de-DE', { minimumFractionDigits: 1, maximumFractionDigits: 1 })
+
+/** Energy as a bare number, one decimal place. */
+export function formatKWhValue(value: number): string {
+  return kWhFormat.format(value)
+}
 
 export function formatKWh(value: number): string {
-  return `${kWhFormat.format(value)} kWh`
+  return `${formatKWhValue(value)} kWh`
 }
 
 export function formatEUR(value: number): string {

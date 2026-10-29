@@ -2,11 +2,11 @@ import { describe, expect, it } from 'vitest'
 import { formatDateTime, formatEUR, formatKWh, solarSharePercent } from './format'
 
 describe('formatKWh', () => {
-  it('formats with two decimals and a unit', () => {
-    expect(formatKWh(5.3119)).toBe('5,31 kWh')
+  it('formats with one decimal and a unit', () => {
+    expect(formatKWh(5.3119)).toBe('5,3 kWh')
   })
   it('formats zero', () => {
-    expect(formatKWh(0)).toBe('0,00 kWh')
+    expect(formatKWh(0)).toBe('0,0 kWh')
   })
 })
 

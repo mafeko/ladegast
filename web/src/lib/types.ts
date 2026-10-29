@@ -12,6 +12,8 @@ export interface Summary {
 export interface FriendInfo {
   id: string
   name: string
+  rateSolarPerKWh: number
+  rateGridPerKWh: number
 }
 
 export interface Dashboard {

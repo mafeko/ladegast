@@ -25,7 +25,7 @@ describe('UsageChart', () => {
 
   it('summarises the total and solar share', () => {
     const wrapper = mount(UsageChart, { props: { buckets: buckets(), granularity: 'day' } })
-    expect(wrapper.text()).toContain('11,00 kWh')
+    expect(wrapper.text()).toContain('11,0 kWh')
     expect(wrapper.text()).toContain('82% Sonne')
   })
 
@@ -35,12 +35,12 @@ describe('UsageChart', () => {
 
     await wrapper.findAll('rect[role="button"]')[0].trigger('mouseenter')
     const tip = wrapper.find('[role="status"]')
-    expect(tip.text()).toContain('Sonne6,00 kWh')
-    expect(tip.text()).toContain('Netz2,00 kWh')
-    expect(tip.text()).toContain('Gesamt8,00 kWh')
+    expect(tip.text()).toContain('Sonne6,0 kWh')
+    expect(tip.text()).toContain('Netz2,0 kWh')
+    expect(tip.text()).toContain('Gesamt8,0 kWh')
 
     await wrapper.findAll('rect[role="button"]')[2].trigger('focus')
-    expect(wrapper.find('[role="status"]').text()).toContain('3,00 kWh')
+    expect(wrapper.find('[role="status"]').text()).toContain('3,0 kWh')
   })
 
   it('offers zooming only when allowed and emits the bucket', async () => {
@@ -58,7 +58,7 @@ describe('UsageChart', () => {
     const empty = emptyBuckets(rangeFor('week', new Date(2026, 9, 23)), 'day')
     const wrapper = mount(UsageChart, { props: { buckets: empty, granularity: 'day' } })
     expect(wrapper.text()).toContain('Keine Ladevorgänge im Zeitraum')
-    expect(wrapper.find('rect[role="button"]').attributes('aria-label')).toContain('Netz 0,00 kWh')
+    expect(wrapper.find('rect[role="button"]').attributes('aria-label')).toContain('Netz 0,0 kWh')
   })
 })
 
