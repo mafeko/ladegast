@@ -72,6 +72,8 @@ export interface Settlement {
   id: string
   at: string
   chargedKWh: number
+  solarKWh: number
+  gridKWh: number
   amountEUR: number
 }
 
@@ -79,6 +81,8 @@ export interface Settlement {
 export interface OpenAmount {
   since: string | null
   chargedKWh: number
+  solarKWh: number
+  gridKWh: number
   amountEUR: number
 }
 

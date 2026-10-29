@@ -35,6 +35,12 @@ const range = ref<Range>(PRESETS.find((p) => p.id === 'month')!.range(new Date()
 const granularity = computed(() => granularityFor(range.value))
 const buckets = computed(() => bucketize(sessions.value, range.value, granularity.value))
 const visible = computed(() => filterSessions(sessions.value, range.value))
+const visibleSettlements = computed(() =>
+  (settlements.value?.settlements ?? []).filter((s) => {
+    const t = new Date(s.at)
+    return t >= range.value.from && t < range.value.to
+  }),
+)
 const canZoom = computed(() => finerGranularity(granularity.value) !== undefined)
 const updatedLabel = computed(() =>
   updatedAt.value ? new Date(updatedAt.value).toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' }) : '',
@@ -105,7 +111,7 @@ onMounted(() => fetchSessions())
       <h3 class="mb-3 text-xs font-semibold tracking-wide text-gray-500 uppercase dark:text-gray-400">
         Ladevorgänge im Zeitraum ({{ visible.length }})
       </h3>
-      <SessionTable :sessions="visible" />
+      <SessionTable :sessions="visible" :settlements="visibleSettlements" />
     </div>
 
     <div v-if="settlements" class="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm sm:p-6 dark:border-gray-800 dark:bg-gray-900">

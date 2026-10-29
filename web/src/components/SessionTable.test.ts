@@ -47,3 +47,24 @@ describe('SessionTable header', () => {
     expect(head.text()).not.toMatch(/Geladen|Sonne|Netz|Kosten/)
   })
 })
+
+describe('SessionTable settlements', () => {
+  const session = { created: '2026-10-17T10:00:00Z', finished: '2026-10-17T12:00:00Z', chargedKWh: 4, solarKWh: 2, gridKWh: 2, costEUR: 1.5 }
+  const settlement = { id: 'a', at: '2026-10-18T10:00:00Z', chargedKWh: 4, solarKWh: 0, gridKWh: 0, amountEUR: 1.5 }
+
+  it('lists a settlement with its sum, newest first, outside the total', () => {
+    const wrapper = mount(SessionTable, { props: { sessions: [session], settlements: [settlement] } })
+    const rows = wrapper.findAll('tbody tr')
+    expect(rows).toHaveLength(2)
+    expect(rows[0].attributes('data-testid')).toBe('settlement-row')
+    expect(rows[0].text()).toContain('Abrechnung')
+    expect(rows[0].text()).toContain('1,50')
+    expect(wrapper.find('[data-testid="session-total"]').text()).toContain('4,0')
+  })
+
+  it('shows settlements even without sessions', () => {
+    const wrapper = mount(SessionTable, { props: { sessions: [], settlements: [settlement] } })
+    expect(wrapper.text()).not.toContain('Keine Ladevorgänge')
+    expect(wrapper.findAll('[data-testid="settlement-row"]')).toHaveLength(1)
+  })
+})

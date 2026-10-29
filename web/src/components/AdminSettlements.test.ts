@@ -6,8 +6,8 @@ import * as api from '../lib/api'
 vi.mock('../lib/api')
 
 const data = {
-  settlements: [{ id: 's1', at: '2026-10-01T10:00:00Z', chargedKWh: 10, amountEUR: 4.2 }],
-  open: { since: '2026-10-01T10:00:00Z', chargedKWh: 3, amountEUR: 1.5 },
+  settlements: [{ id: 's1', at: '2026-10-01T10:00:00Z', chargedKWh: 10, solarKWh: 0, gridKWh: 0, amountEUR: 4.2 }],
+  open: { since: '2026-10-01T10:00:00Z', chargedKWh: 3, solarKWh: 0, gridKWh: 0, amountEUR: 1.5 },
 }
 
 beforeEach(() => {

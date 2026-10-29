@@ -89,7 +89,7 @@ describe('range helper used by explorer', () => {
 describe('UsageExplorer without settlements', () => {
   it('renders chart and table when the friend has no settlement yet', async () => {
     const load = vi.fn().mockResolvedValue([sessionIn(0, 2)])
-    const loadSettlements = vi.fn().mockResolvedValue({ settlements: [], open: { since: null, chargedKWh: 5, amountEUR: 1 } })
+    const loadSettlements = vi.fn().mockResolvedValue({ settlements: [], open: { since: null, chargedKWh: 5, solarKWh: 0, gridKWh: 0, amountEUR: 1 } })
     const wrapper = mount(UsageExplorer, { props: { cacheKey: 'ns', load, loadSettlements } })
     await flush()
     expect(wrapper.find('svg').exists()).toBe(true)
@@ -98,7 +98,7 @@ describe('UsageExplorer without settlements', () => {
 
   it('tolerates a null settlements list', async () => {
     const load = vi.fn().mockResolvedValue([sessionIn(0, 2)])
-    const loadSettlements = vi.fn().mockResolvedValue({ settlements: null, open: { since: null, chargedKWh: 0, amountEUR: 0 } })
+    const loadSettlements = vi.fn().mockResolvedValue({ settlements: null, open: { since: null, chargedKWh: 0, solarKWh: 0, gridKWh: 0, amountEUR: 0 } })
     const wrapper = mount(UsageExplorer, { props: { cacheKey: 'ns2', load, loadSettlements } })
     await flush()
     expect(wrapper.find('svg').exists()).toBe(true)
