@@ -90,3 +90,18 @@ Common tasks: `task test`, `task web:test`, `task check`, `task docker:build`.
 - [DESIGN.md](DESIGN.md): architecture, data model, API routes, auth flow (German)
 - [DEPLOYMENT.md](DEPLOYMENT.md): running the binary or Docker image (German)
 - [schema/config.md](schema/config.md): environment variable reference
+
+## Versioning & releases
+
+[Semantic Versioning](https://semver.org) driven by [Conventional Commits](https://www.conventionalcommits.org). Run `npm ci` once at the repo root to enable the `commit-msg` hook (husky + commitlint).
+
+| Commit | Release |
+| --- | --- |
+| `fix: ...` | patch |
+| `feat: ...` | minor |
+| `feat!: ...` / `BREAKING CHANGE:` footer | major |
+| `chore:` `docs:` `ci:` `test:` `refactor:` ... | none |
+
+On every push to `main` CI runs [semantic-release](https://semantic-release.gitbook.io): it computes the next version from the commits since the last `v*` tag, updates `package.json`, `web/package.json` and `CHANGELOG.md` (committed back as `chore(release): x.y.z [skip ci]`), tags `vX.Y.Z`, creates the GitHub release and then builds the Docker image tagged `X.Y.Z`, `X.Y` and `latest`. No releasable commit, no new tag, no image. Use squash merges with a conventional PR title (PR titles are linted).
+
+Preview locally: `npm run release:dry` (only meaningful on `main`).

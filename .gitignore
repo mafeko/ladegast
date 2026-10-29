@@ -23,3 +23,5 @@ internal/webui/dist/*
 coverage.html
 
 .DS_Store
+
+node_modules/

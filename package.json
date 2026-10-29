@@ -1,0 +1,22 @@
+{
+  "name": "ladegast",
+  "version": "0.0.0-development",
+  "private": true,
+  "description": "Release manifest and commit tooling. The version is managed by semantic-release; do not edit by hand.",
+  "license": "UNLICENSED",
+  "scripts": {
+    "prepare": "husky",
+    "commitlint": "commitlint",
+    "release:dry": "semantic-release --dry-run --no-ci"
+  },
+  "devDependencies": {
+    "@commitlint/cli": "^21.2.4",
+    "@commitlint/config-conventional": "^21.2.4",
+    "@semantic-release/changelog": "^7.0.0",
+    "@semantic-release/exec": "^7.1.0",
+    "@semantic-release/git": "^11.0.1",
+    "husky": "^9.1.7",
+    "semantic-release": "^25.0.9"
+  },
+  "type": "module"
+}
