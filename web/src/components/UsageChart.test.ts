@@ -69,8 +69,8 @@ describe('UsageChart settlements', () => {
         buckets: buckets(),
         granularity: 'day',
         settlements: [
-          { id: 'in', at: new Date(2026, 9, 21, 12).toISOString(), chargedKWh: 5, amountEUR: 12.5 },
-          { id: 'out', at: new Date(2025, 0, 1).toISOString(), chargedKWh: 5, amountEUR: 99 },
+          { id: 'in', at: new Date(2026, 9, 21, 12).toISOString(), chargedKWh: 5, solarKWh: 0, gridKWh: 0, amountEUR: 12.5 },
+          { id: 'out', at: new Date(2025, 0, 1).toISOString(), chargedKWh: 5, solarKWh: 0, gridKWh: 0, amountEUR: 99 },
         ],
       },
     })
@@ -97,9 +97,9 @@ describe('UsageChart settlement label layout', () => {
         buckets: buckets(),
         granularity: 'day',
         settlements: [
-          { id: 'a', at: at(8), chargedKWh: 1, amountEUR: 10 },
-          { id: 'b', at: at(12), chargedKWh: 1, amountEUR: 20 },
-          { id: 'c', at: at(16), chargedKWh: 1, amountEUR: 30 },
+          { id: 'a', at: at(8), chargedKWh: 1, solarKWh: 0, gridKWh: 0, amountEUR: 10 },
+          { id: 'b', at: at(12), chargedKWh: 1, solarKWh: 0, gridKWh: 0, amountEUR: 20 },
+          { id: 'c', at: at(16), chargedKWh: 1, solarKWh: 0, gridKWh: 0, amountEUR: 30 },
         ],
       },
     })

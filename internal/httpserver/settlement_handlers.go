@@ -15,6 +15,8 @@ type settlementView struct {
 	ID         string    `json:"id"`
 	At         time.Time `json:"at"`
 	ChargedKWh float64   `json:"chargedKWh"`
+	SolarKWh   float64   `json:"solarKWh"`
+	GridKWh    float64   `json:"gridKWh"`
 	AmountEUR  float64   `json:"amountEUR"`
 }
 
@@ -23,6 +25,8 @@ type settlementView struct {
 type openAmount struct {
 	Since      *time.Time `json:"since"`
 	ChargedKWh float64    `json:"chargedKWh"`
+	SolarKWh   float64    `json:"solarKWh"`
+	GridKWh    float64    `json:"gridKWh"`
 	AmountEUR  float64    `json:"amountEUR"`
 }
 
@@ -54,12 +58,13 @@ func settlementsFor(friend store.Friend, sessions []evcc.Session) settlementsRes
 	for _, st := range sts {
 		sum := between(prev, st.At)
 		resp.Settlements = append(resp.Settlements, settlementView{
-			ID: st.ID, At: st.At, ChargedKWh: sum.ChargedKWh, AmountEUR: sum.CostEUR,
+			ID: st.ID, At: st.At, ChargedKWh: sum.ChargedKWh,
+			SolarKWh: sum.SolarKWh, GridKWh: sum.GridKWh, AmountEUR: sum.CostEUR,
 		})
 		prev = st.At
 	}
 	open := between(prev, time.Time{})
-	resp.Open = openAmount{ChargedKWh: open.ChargedKWh, AmountEUR: open.CostEUR}
+	resp.Open = openAmount{ChargedKWh: open.ChargedKWh, SolarKWh: open.SolarKWh, GridKWh: open.GridKWh, AmountEUR: open.CostEUR}
 	if !prev.IsZero() {
 		resp.Open.Since = &prev
 	}
