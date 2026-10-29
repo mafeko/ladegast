@@ -7,8 +7,10 @@ import type { Settlement } from '../lib/types'
 const props = defineProps<{ buckets: Bucket[]; granularity: Granularity; canZoom?: boolean; settlements?: Settlement[] }>()
 const emit = defineEmits<{ zoom: [bucket: Bucket] }>()
 
-const HEIGHT = 260
-const MARGIN = { top: 36, right: 8, bottom: 28, left: 44 }
+const PLOT_H = 196
+const MARGIN = { right: 8, bottom: 28, left: 44 }
+const LANE_H = 12
+const CHAR_W = 6.4 // approx. width of an 11px label glyph
 
 const container = ref<HTMLElement | null>(null)
 const width = ref(600)
@@ -26,7 +28,7 @@ onMounted(() => {
 onBeforeUnmount(() => observer?.disconnect())
 
 const innerW = computed(() => Math.max(0, width.value - MARGIN.left - MARGIN.right))
-const innerH = HEIGHT - MARGIN.top - MARGIN.bottom
+const innerH = PLOT_H
 
 const total = (b: Bucket) => b.gridKWh + b.solarKWh
 
@@ -41,7 +43,7 @@ function niceMax(max: number): number {
 
 const yMax = computed(() => niceMax(Math.max(0, ...props.buckets.map(total))))
 const ticks = computed(() => [0, 1, 2, 3, 4].map((i) => (yMax.value / 4) * i))
-const y = (v: number) => MARGIN.top + innerH - (v / yMax.value) * innerH
+const y = (v: number) => top.value + innerH - (v / yMax.value) * innerH
 
 const band = computed(() => (props.buckets.length ? innerW.value / props.buckets.length : 0))
 const barW = computed(() => Math.max(2, Math.min(48, band.value * 0.7)))
@@ -68,9 +70,11 @@ const tooltipLeft = computed(() => {
 })
 
 // Settlements inside the visible range become vertical lines, positioned
-// proportionally within the bucket they fall into.
+// proportionally within the bucket they fall into. Labels that would touch
+// are spread over extra lanes above the plot, so none overlap.
 const settlementLines = computed(() => {
-  const lines: { id: string; x: number; label: string; row: number; anchor: 'start' | 'middle' | 'end' }[] = []
+  const lines: { id: string; x: number; x1: number; x2: number; label: string; title: string; lane: number; anchor: 'start' | 'middle' | 'end' }[] = []
+  const laneEnds: number[] = []
   const list = [...(props.settlements ?? [])].sort((a, b) => a.at.localeCompare(b.at))
   for (const s of list) {
     const t = new Date(s.at).getTime()
@@ -78,11 +82,20 @@ const settlementLines = computed(() => {
     if (i === -1) continue
     const b = props.buckets[i]
     const lx = MARGIN.left + band.value * (i + (t - b.start.getTime()) / (b.end.getTime() - b.start.getTime()))
-    const anchor = lx > width.value - 110 ? 'end' : lx < MARGIN.left + 60 ? 'start' : 'middle'
-    lines.push({ id: s.id, x: lx, label: `Abrechnung · ${formatEUR(s.amountEUR)}`, row: lines.length % 2, anchor })
+    const label = formatEUR(s.amountEUR)
+    const w = label.length * CHAR_W
+    const anchor = lx + w / 2 > width.value - 2 ? 'end' : lx - w / 2 < MARGIN.left ? 'start' : 'middle'
+    const x1 = anchor === 'end' ? lx - w : anchor === 'start' ? lx : lx - w / 2
+    let lane = laneEnds.findIndex((end) => x1 >= end + 6)
+    if (lane === -1) lane = laneEnds.length
+    laneEnds[lane] = x1 + w
+    lines.push({ id: s.id, x: lx, x1, x2: x1 + w, label, title: `Abrechnung · ${label}`, lane, anchor })
   }
   return lines
 })
+const lanes = computed(() => Math.max(0, ...settlementLines.value.map((l) => l.lane + 1)))
+const top = computed(() => (lanes.value ? 8 + lanes.value * LANE_H + 6 : 20))
+const HEIGHT = computed(() => top.value + innerH + MARGIN.bottom)
 
 function describe(b: Bucket): string {
   return `${bucketTitle(b, props.granularity)}: Netz ${formatKWh(b.gridKWh)}, Sonne ${formatKWh(b.solarKWh)}, gesamt ${formatKWh(total(b))}`
@@ -150,7 +163,7 @@ function onZoom() {
           <!-- full-height hit area: hover, tap, keyboard focus -->
           <rect
             :x="MARGIN.left + band * i"
-            :y="MARGIN.top"
+            :y="top"
             :width="band"
             :height="innerH"
             fill="transparent"
@@ -165,9 +178,23 @@ function onZoom() {
           />
         </g>
 
-        <g v-for="l in settlementLines" :key="l.id" data-testid="settlement-line" class="pointer-events-none text-emerald-600 dark:text-emerald-400">
-          <line :x1="l.x" :x2="l.x" :y1="16 + l.row * 12" :y2="MARGIN.top + innerH" stroke="currentColor" stroke-width="2" stroke-dasharray="4 3" />
-          <text :x="l.x" :y="12 + l.row * 12" :text-anchor="l.anchor" fill="currentColor" class="text-[11px] font-medium">{{ l.label }}</text>
+        <!-- lines first, labels on top with a halo so crossing lines never cut through text -->
+        <g class="pointer-events-none text-emerald-600 dark:text-emerald-400">
+          <g v-for="l in settlementLines" :key="l.id" data-testid="settlement-line">
+            <title>{{ l.title }}</title>
+            <line :x1="l.x" :x2="l.x" :y1="8 + l.lane * LANE_H + 3" :y2="top + innerH" stroke="currentColor" stroke-width="2" stroke-dasharray="4 3" />
+          </g>
+          <text
+            v-for="l in settlementLines"
+            :key="'t' + l.id"
+            :x="l.x"
+            :y="8 + l.lane * LANE_H"
+            :text-anchor="l.anchor"
+            fill="currentColor"
+            stroke-width="4"
+            stroke-linejoin="round"
+            class="stroke-white text-[11px] font-medium [paint-order:stroke] dark:stroke-gray-900"
+          >{{ l.label }}</text>
         </g>
       </svg>
 

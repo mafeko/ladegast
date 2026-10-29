@@ -88,3 +88,22 @@ describe('UsageChart without settlements', () => {
     expect(wrapper.findAll('[data-testid="settlement-line"]')).toHaveLength(0)
   })
 })
+
+describe('UsageChart settlement label layout', () => {
+  it('puts touching labels on different lanes', () => {
+    const at = (h: number) => new Date(2026, 9, 21, h).toISOString()
+    const wrapper = mount(UsageChart, {
+      props: {
+        buckets: buckets(),
+        granularity: 'day',
+        settlements: [
+          { id: 'a', at: at(8), chargedKWh: 1, amountEUR: 10 },
+          { id: 'b', at: at(12), chargedKWh: 1, amountEUR: 20 },
+          { id: 'c', at: at(16), chargedKWh: 1, amountEUR: 30 },
+        ],
+      },
+    })
+    const ys = wrapper.findAll('text.stroke-white').map((t) => t.attributes('y'))
+    expect(new Set(ys).size).toBeGreaterThan(1)
+  })
+})
