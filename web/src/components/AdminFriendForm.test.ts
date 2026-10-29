@@ -54,3 +54,22 @@ describe('AdminFriendForm', () => {
 async function flushMicrotasks() {
   await new Promise((resolve) => setTimeout(resolve, 0))
 }
+
+describe('AdminFriendForm vehicle suggestions', () => {
+  it('offers unassigned EVCC vehicles as suggestions', async () => {
+    vi.mocked(api.listVehicles).mockResolvedValue(['vehicle_1', 'vehicle_2'])
+    const wrapper = mount(AdminFriendForm)
+    await new Promise((resolve) => setTimeout(resolve, 0))
+
+    const options = wrapper.findAll('#vehicleSuggestions option').map((o) => o.attributes('value'))
+    expect(options).toEqual(['vehicle_1', 'vehicle_2'])
+  })
+
+  it('still works when loading suggestions fails', async () => {
+    vi.mocked(api.listVehicles).mockRejectedValue(new Error('boom'))
+    const wrapper = mount(AdminFriendForm)
+    await new Promise((resolve) => setTimeout(resolve, 0))
+
+    expect(wrapper.findAll('#vehicleSuggestions option')).toHaveLength(0)
+  })
+})

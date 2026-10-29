@@ -2,6 +2,15 @@
 
 Let friends charge their car at your home wallbox without giving them access to your [EVCC](https://evcc.io) instance.
 
+<p align="center">
+  <img src="docs/screenshots/friend-dashboard.png" alt="Friend dashboard with usage chart, sessions and settlements" width="62%">
+  <img src="docs/screenshots/friend-mobile.png" alt="Friend dashboard on mobile" width="21%">
+</p>
+<p align="center">
+  <img src="docs/screenshots/admin.png" alt="Admin panel: create and manage friends" width="86%">
+</p>
+<p align="center"><sub>Screenshots use demo data from the mock EVCC (<code>task evcc:mock</code>).</sub></p>
+
 ## Goal
 
 A home-wallbox owner runs EVCC. Friends occasionally charge there. Ladegast sits in front of EVCC and gives each friend a minimal, private view:
@@ -14,10 +23,12 @@ The owner (admin) manages friends and tariffs. Friends never see EVCC itself.
 
 ## How it works
 
-1. Admin creates a friend: name, EVCC vehicle, rates, PIN.
+1. Admin creates a friend: name, EVCC vehicle (picked from a suggestion list), rates, PIN.
 2. Friend receives a personal one-time link plus PIN.
 3. Friend opens the link, enters the PIN, and gets a dashboard for their own vehicle only.
 4. Ladegast reads sessions live from EVCC, aggregates them, and applies the friend's rates.
+
+**Vehicle suggestions:** the admin form suggests EVCC vehicles that are not yet assigned to a friend. They are derived from EVCC's charging sessions, so a vehicle only shows up in the admin panel after its first charging session. Before that, enter its EVCC name manually.
 
 Admin can regenerate links, reset PINs, delete friends, and preview any friend's view.
 

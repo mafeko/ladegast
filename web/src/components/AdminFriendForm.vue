@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { ref } from 'vue'
-import { createFriend } from '../lib/api'
+import { onMounted, ref } from 'vue'
+import { createFriend, listVehicles } from '../lib/api'
 import type { CreatedFriend } from '../lib/types'
 
 const emit = defineEmits<{ created: [friend: CreatedFriend] }>()
@@ -12,6 +12,16 @@ const rateGridPerKWh = ref(0.35)
 const pin = ref('')
 const error = ref('')
 const submitting = ref(false)
+const vehicles = ref<string[]>([])
+
+async function loadVehicles() {
+  try {
+    vehicles.value = (await listVehicles()) ?? []
+  } catch {
+    vehicles.value = [] // suggestions are optional; free text still works
+  }
+}
+onMounted(loadVehicles)
 
 async function onSubmit() {
   error.value = ''
@@ -25,6 +35,7 @@ async function onSubmit() {
       pin: pin.value || undefined,
     })
     emit('created', created)
+    void loadVehicles()
     name.value = ''
     vehicleName.value = ''
     pin.value = ''
@@ -53,9 +64,14 @@ async function onSubmit() {
         <input
           id="vehicleName"
           v-model="vehicleName"
+          list="vehicleSuggestions"
           required
+          autocomplete="off"
           class="w-full rounded-lg border border-gray-300 bg-white min-h-11 px-3 py-2 text-base focus:outline-none sm:min-h-0 sm:text-sm focus:ring-2 focus:ring-indigo-500 dark:border-gray-700 dark:bg-gray-950"
         />
+        <datalist id="vehicleSuggestions">
+          <option v-for="v in vehicles" :key="v" :value="v" />
+        </datalist>
       </div>
       <div>
         <label for="rateSolar" class="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">Preis Sonne (EUR/kWh)</label>
