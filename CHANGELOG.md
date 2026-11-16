@@ -1,3 +1,10 @@
+# [1.4.0](https://github.com/mafeko/ladegast/compare/v1.3.0...v1.4.0) (2026-11-16)
+
+
+### Features
+
+* local-only admin guard, GitHub footer, hosting docs and MIT license ([#11](https://github.com/mafeko/ladegast/issues/11)) ([3f6569a](https://github.com/mafeko/ladegast/commit/3f6569accdc8c4b40c5882759f72665fe3e02760))
+
 # [1.3.0](https://github.com/mafeko/ladegast/compare/v1.2.0...v1.3.0) (2026-11-16)
 
 
