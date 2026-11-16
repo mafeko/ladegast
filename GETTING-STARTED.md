@@ -1,6 +1,6 @@
 # Getting started (for EVCC owners)
 
-Goal: your guests open a personal link on their phone, enter a PIN, and can start/stop fast charging and see their own sessions and cost. They never see your EVCC.
+Goal: your guests open a personal link on their phone, enter a PIN, and can see their own charging sessions, solar/grid share and cost (charge mode switching is on the [roadmap](README.md#roadmap)). They never see your EVCC.
 
 Time: ~30 minutes. You need an EVCC instance with charging sessions enabled and a machine at home that is always on (Raspberry Pi, NAS, mini PC, or the EVCC host itself) running Docker.
 

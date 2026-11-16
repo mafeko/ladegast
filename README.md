@@ -15,11 +15,22 @@ Let guests charge their car at your home wallbox without giving them access to y
 >
 > **Vibe-coded:** most of this code was written with AI assistance ("vibe coding") and only partly reviewed by hand. Read the code before you trust it with anything important.
 
+## Roadmap
+
+Current state: guests see their own sessions, energy (solar vs. grid), cost and settlements. Planned, roughly in order:
+
+- [ ] **Charge mode switching for guests:** toggle between `smart` (solar surplus) and `now` (fast charge). The backend and UI component exist but the switch is disabled in the guest dashboard until the EVCC write call (`POST /api/vehicles/{name}/mode/{mode}`) is verified against a real EVCC setup.
+- [ ] **Auto-reset to `smart`:** fast charge falls back to solar charging after a configurable time, so a forgotten `now` does not charge from the grid all week.
+- [ ] **Admin login rate limit:** same lockout as the guest PIN. Less urgent now that [the admin area is local-only](#security).
+- [ ] **Language:** the UI is German only today; add an English UI (language switch) and German versions of the new docs for the evcc docs listing.
+- [ ] **Screenshot task:** one command (`task docs:screenshots`) to regenerate the README images from the mock EVCC.
+
+Ideas and bug reports are welcome as GitHub issues.
+
 ## Goal
 
 A home-wallbox owner runs EVCC. Guests occasionally charge there. Ladegast sits in front of EVCC and gives each guest a minimal, private view:
 
-- **Charge control:** switch the charging mode between `smart` (solar surplus) and `now` (fast charge).
 - **Usage insight:** sessions, energy (solar vs. grid), and cost over a selectable time range.
 - **Own tariffs:** cost is computed with per-guest solar/grid rates, not EVCC's tariff.
 
