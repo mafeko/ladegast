@@ -44,7 +44,7 @@ func (s *Server) Handler() http.Handler {
 	if s.assets != nil {
 		s.registerFrontendRoutes(mux, s.assets)
 	}
-	return mux
+	return s.adminLocalOnly(mux)
 }
 
 func (s *Server) publicPath(suffix string) string {
