@@ -11,6 +11,10 @@ Let guests charge their car at your home wallbox without giving them access to y
 </p>
 <p align="center"><sub>Screenshots use demo data from the mock EVCC (<code>task evcc:mock</code>).</sub></p>
 
+> **Disclaimer:** Ladegast is a hobby project. It comes with **no warranty** of any kind and no promise that it works, keeps working, or is secure for your setup. Use it at your own risk and check billing results yourself. It is not affiliated with EVCC.
+>
+> **Vibe-coded:** most of this code was written with AI assistance ("vibe coding") and only partly reviewed by hand. Read the code before you trust it with anything important.
+
 ## Goal
 
 A home-wallbox owner runs EVCC. Guests occasionally charge there. Ladegast sits in front of EVCC and gives each guest a minimal, private view:
@@ -60,7 +64,7 @@ No charging data is stored; only Ladegast's own entities are persisted.
 
 **Exposing the service**
 
-Ladegast does not restrict the admin area itself. The infrastructure must. Only `/public/*` and the static frontend may be reachable from the internet; `/admin/*` stays internal.
+The admin area is local-only by default: requests to `/admin/*` get a 404 unless they come directly from loopback, the LAN or Tailscale and carry no proxy headers (`X-Forwarded-For`, `CF-Connecting-IP`, ...). Traffic through a tunnel or reverse proxy therefore never reaches the admin area. `LADEGAST_ADMIN_ALLOW_REMOTE=true` disables this guard; then the infrastructure must block `/admin/*` itself.
 
 ```
 Internet ──► reverse proxy ──► Ladegast
@@ -84,7 +88,11 @@ Admin  ──► home network / Tailscale ────────────�
 
 Details and a worked example: [DEPLOYMENT.md](DEPLOYMENT.md).
 
+**No own server?** Not required. A tunnel such as Cloudflare Tunnel or Tailscale Funnel can publish Ladegast from your home network without router changes. Options, trade-offs and how to protect `/admin`: [HOSTING.md](HOSTING.md).
+
 ## Quick start
+
+New to this? Follow the step-by-step guide: [GETTING-STARTED.md](GETTING-STARTED.md) (Docker, EVCC API key, public access, first guest). Developer setup:
 
 ```bash
 cp .env.example .env     # fill in values, see schema/config.md
@@ -98,9 +106,15 @@ Common tasks: `task test`, `task web:test`, `task check`, `task docker:build`.
 
 ## Further docs
 
+- [GETTING-STARTED.md](GETTING-STARTED.md): setup guide for EVCC owners
+- [HOSTING.md](HOSTING.md): making Ladegast reachable for guests (with or without own server)
 - [DESIGN.md](DESIGN.md): architecture, data model, API routes, auth flow (German)
 - [DEPLOYMENT.md](DEPLOYMENT.md): running the binary or Docker image (German)
 - [schema/config.md](schema/config.md): environment variable reference
+
+## License
+
+[MIT](LICENSE). No warranty, see the disclaimer above.
 
 ## Versioning & releases
 

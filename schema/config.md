@@ -18,6 +18,7 @@ Konfigurationsdatei mit echten Werten gehoert ins Repository (siehe
 | `LADEGAST_ADMIN_PASSWORD`            | string   | nein¹   | –         | Admin-Passwort im Klartext, wird beim ersten Start gehasht in die DB uebernommen |
 | `LADEGAST_RATE_LIMIT_MAX_ATTEMPTS`   | int      | nein    | `5`       | Fehlversuche PIN-Login bis Lockout |
 | `LADEGAST_RATE_LIMIT_WINDOW`         | duration | nein    | `15m`     | Zeitfenster fuer das Rate-Limit |
+| `LADEGAST_ADMIN_ALLOW_REMOTE`        | bool     | nein    | `false`   | `false`: Admin-Bereich antwortet nur Anfragen aus Loopback/LAN/Tailscale (100.64.0.0/10) **ohne** Proxy-Header (`X-Forwarded-*`, `Forwarded`, `CF-Connecting-IP`, ...), sonst 404. `true` schaltet die Sperre ab (z. B. LAN-Reverse-Proxy) |
 
 ¹ Pflicht nur, wenn noch kein Admin-Account in der Datenbank existiert.
 

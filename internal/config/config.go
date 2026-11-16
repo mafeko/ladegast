@@ -27,6 +27,9 @@ type Config struct {
 
 	RateLimitMaxAttempts int
 	RateLimitWindow      time.Duration
+
+	// AdminAllowRemote disables the local-only guard on the admin area.
+	AdminAllowRemote bool
 }
 
 // Load reads and validates the configuration from the process environment.
@@ -73,6 +76,13 @@ func load(getenv func(string) string) (Config, error) {
 		errs = append(errs, fmt.Sprintf("LADEGAST_RATE_LIMIT_WINDOW: invalid duration %q", windowRaw))
 	}
 	cfg.RateLimitWindow = window
+
+	allowRemoteRaw := withDefault(getenv("LADEGAST_ADMIN_ALLOW_REMOTE"), "false")
+	allowRemote, err := strconv.ParseBool(allowRemoteRaw)
+	if err != nil {
+		errs = append(errs, fmt.Sprintf("LADEGAST_ADMIN_ALLOW_REMOTE: invalid boolean %q", allowRemoteRaw))
+	}
+	cfg.AdminAllowRemote = allowRemote
 
 	if (cfg.AdminUsername == "") != (cfg.AdminPassword == "") {
 		errs = append(errs, "LADEGAST_ADMIN_USERNAME and LADEGAST_ADMIN_PASSWORD must be set together")

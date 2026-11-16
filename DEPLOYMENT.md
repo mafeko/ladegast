@@ -51,9 +51,14 @@ Ladegast exponiert intern zwei API-Pfadpräfixe (Default `/public` und
 **Von außen (Internet) darf alles außer `ADMIN_PATH_PREFIX` erreichbar
 sein.** Die Admin-Oberfläche selbst liegt unter `ADMIN_PATH_PREFIX` und ist
 damit automatisch mitgeschützt, sobald dieser Pfad abgeschnitten wird.
-`ADMIN_PATH_PREFIX` ist für den Betreiber selbst gedacht und muss durch
-die Infrastruktur abgeschnitten werden — Ladegast selbst erzwingt das
-nicht (kein IP-Allowlisting o. Ä. im Code, siehe DESIGN.md Abschnitt 1).
+`ADMIN_PATH_PREFIX` ist für den Betreiber selbst gedacht. Ladegast
+beantwortet Anfragen darauf standardmäßig nur, wenn sie direkt von
+Loopback, privaten LAN-Adressen oder Tailscale (100.64.0.0/10) kommen und
+keine Proxy-Header tragen (`X-Forwarded-For`, `Forwarded`,
+`CF-Connecting-IP`, …); alles andere bekommt 404. Über Tunnel und
+Reverse Proxy ist der Admin-Bereich damit nicht erreichbar. Steht ein
+Reverse Proxy im LAN davor, `LADEGAST_ADMIN_ALLOW_REMOTE=true` setzen und
+den Admin-Pfad selbst abschneiden (siehe unten).
 
 Wie das konkret aussieht, ist Betreiber-Sache. Optionen, ohne Anspruch auf
 Vollständigkeit:
