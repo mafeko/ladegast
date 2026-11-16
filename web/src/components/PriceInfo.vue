@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { formatEUR } from '../lib/format'
-import type { FriendInfo } from '../lib/types'
+import type { GuestInfo } from '../lib/types'
 
-defineProps<{ friend: FriendInfo }>()
+defineProps<{ guest: GuestInfo }>()
 </script>
 
 <template>
@@ -16,13 +16,13 @@ defineProps<{ friend: FriendInfo }>()
         <dt class="flex items-center gap-1.5 text-gray-600 dark:text-gray-300">
           <span class="inline-block size-3 rounded-sm bg-amber-400"></span>Sonne
         </dt>
-        <dd class="font-semibold">{{ formatEUR(friend.rateSolarPerKWh) }}<span class="text-xs font-normal text-gray-500 dark:text-gray-400"> / kWh</span></dd>
+        <dd class="font-semibold">{{ formatEUR(guest.rateSolarPerKWh) }}<span class="text-xs font-normal text-gray-500 dark:text-gray-400"> / kWh</span></dd>
       </div>
       <div class="flex items-center gap-2">
         <dt class="flex items-center gap-1.5 text-gray-600 dark:text-gray-300">
           <span class="inline-block size-3 rounded-sm bg-slate-500 dark:bg-slate-400"></span>Netz
         </dt>
-        <dd class="font-semibold">{{ formatEUR(friend.rateGridPerKWh) }}<span class="text-xs font-normal text-gray-500 dark:text-gray-400"> / kWh</span></dd>
+        <dd class="font-semibold">{{ formatEUR(guest.rateGridPerKWh) }}<span class="text-xs font-normal text-gray-500 dark:text-gray-400"> / kWh</span></dd>
       </div>
     </dl>
     <p class="mt-2 text-xs text-gray-500 dark:text-gray-400">Kosten = Sonnenstrom × Sonnenpreis + Netzstrom × Netzpreis.</p>

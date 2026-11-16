@@ -1,51 +1,51 @@
 # Ladegast
 
-Let friends charge their car at your home wallbox without giving them access to your [EVCC](https://evcc.io) instance.
+Let guests charge their car at your home wallbox without giving them access to your [EVCC](https://evcc.io) instance.
 
 <p align="center">
-  <img src="docs/screenshots/friend-dashboard.png" alt="Friend dashboard with usage chart, sessions and settlements" width="62%">
-  <img src="docs/screenshots/friend-mobile.png" alt="Friend dashboard on mobile" width="21%">
+  <img src="docs/screenshots/guest-dashboard.png" alt="Guest dashboard with usage chart, sessions and settlements" width="62%">
+  <img src="docs/screenshots/guest-mobile.png" alt="Guest dashboard on mobile" width="21%">
 </p>
 <p align="center">
-  <img src="docs/screenshots/admin.png" alt="Admin panel: create and manage friends" width="86%">
+  <img src="docs/screenshots/admin.png" alt="Admin panel: create and manage guests" width="86%">
 </p>
 <p align="center"><sub>Screenshots use demo data from the mock EVCC (<code>task evcc:mock</code>).</sub></p>
 
 ## Goal
 
-A home-wallbox owner runs EVCC. Friends occasionally charge there. Ladegast sits in front of EVCC and gives each friend a minimal, private view:
+A home-wallbox owner runs EVCC. Guests occasionally charge there. Ladegast sits in front of EVCC and gives each guest a minimal, private view:
 
 - **Charge control:** switch the charging mode between `smart` (solar surplus) and `now` (fast charge).
 - **Usage insight:** sessions, energy (solar vs. grid), and cost over a selectable time range.
-- **Own tariffs:** cost is computed with per-friend solar/grid rates, not EVCC's tariff.
+- **Own tariffs:** cost is computed with per-guest solar/grid rates, not EVCC's tariff.
 
-The owner (admin) manages friends and tariffs. Friends never see EVCC itself.
+The owner (admin) manages guests and tariffs. Guests never see EVCC itself.
 
 ## How it works
 
-1. Admin creates a friend: name, EVCC vehicle (picked from a suggestion list), rates, PIN.
-2. Friend receives a personal one-time link plus PIN.
-3. Friend opens the link, enters the PIN, and gets a dashboard for their own vehicle only.
-4. Ladegast reads sessions live from EVCC, aggregates them, and applies the friend's rates.
+1. Admin creates a guest: name, EVCC vehicle (picked from a suggestion list), rates, PIN.
+2. Guest receives a personal one-time link plus PIN.
+3. Guest opens the link, enters the PIN, and gets a dashboard for their own vehicle only.
+4. Ladegast reads sessions live from EVCC, aggregates them, and applies the guest's rates.
 
-**Vehicle suggestions:** the admin form suggests EVCC vehicles that are not yet assigned to a friend. They are derived from EVCC's charging sessions, so a vehicle only shows up in the admin panel after its first charging session. Before that, enter its EVCC name manually.
+**Vehicle suggestions:** the admin form suggests EVCC vehicles that are not yet assigned to a guest. They are derived from EVCC's charging sessions, so a vehicle only shows up in the admin panel after its first charging session. Before that, enter its EVCC name manually.
 
-Admin can regenerate links, reset PINs, delete friends, and preview any friend's view.
+Admin can regenerate links, reset PINs, delete guests, and preview any guest's view.
 
 ## Architecture
 
 ```
 Browser (Vue SPA) ──► Ladegast (Go binary, embeds SPA) ──► EVCC (REST API, API key)
                               │
-                              └─► bbolt file (friends, admins, login rate limits)
+                              └─► bbolt file (guests, admins, login rate limits)
 ```
 
 | Part | Location | Role |
 |---|---|---|
-| HTTP server | `internal/httpserver` | Friend and admin APIs, sessions, SPA serving |
+| HTTP server | `internal/httpserver` | Guest and admin APIs, sessions, SPA serving |
 | EVCC client | `internal/evcc` | Fetch sessions, switch modes, aggregate |
-| Store | `internal/store` | Persistent friends/admins, PIN rate limiting |
-| Frontend | `web/` | Vue + Tailwind: friend dashboard, usage explorer, admin UI |
+| Store | `internal/store` | Persistent guests/admins, PIN rate limiting |
+| Frontend | `web/` | Vue + Tailwind: guest dashboard, usage explorer, admin UI |
 | Mock EVCC | `cmd/evccmock`, `dev/` | Fake EVCC with demo data for local development |
 
 No charging data is stored; only Ladegast's own entities are persisted.
@@ -54,9 +54,9 @@ No charging data is stored; only Ladegast's own entities are persisted.
 
 **Authentication**
 
-- **Friend:** opens a personal link (`/public/l/<uuid>`) and enters a PIN. The PIN is stored as a bcrypt hash. Failed attempts are rate-limited per IP. On success a signed, `HttpOnly`, `SameSite=Strict` session cookie is issued; every further request is checked against that friend's ID. A friend can only see their own vehicle.
+- **Guest:** opens a personal link (`/public/l/<uuid>`) and enters a PIN. The PIN is stored as a bcrypt hash. Failed attempts are rate-limited per IP. On success a signed, `HttpOnly`, `SameSite=Strict` session cookie is issued; every further request is checked against that guest's ID. A guest can only see their own vehicle.
 - **Admin:** username and password (bcrypt) via `/admin/login`, also cookie-based. Initial credentials come from environment variables on first start.
-- **Revocation:** the admin can regenerate a link, reset a PIN, or delete a friend; the old link/PIN stops working immediately.
+- **Revocation:** the admin can regenerate a link, reset a PIN, or delete a guest; the old link/PIN stops working immediately.
 
 **Exposing the service**
 
@@ -74,7 +74,7 @@ The proxy (Caddy, nginx, Traefik, ...) rejects the admin prefix and forwards eve
 Run Ladegast (and EVCC) at home, and a small cloud server as the public entry point, connected through a VPN such as Tailscale:
 
 ```
-Friend ──► cloud server (reverse proxy, blocks /admin) ══ Tailscale ══► home: Ladegast ──► EVCC
+Guest ──► cloud server (reverse proxy, blocks /admin) ══ Tailscale ══► home: Ladegast ──► EVCC
 Admin  ──► home network / Tailscale ──────────────────────────────────► Ladegast /admin
 ```
 

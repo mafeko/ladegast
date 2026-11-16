@@ -3,7 +3,7 @@ package evcc
 import "fmt"
 
 // Summary totals a set of sessions in Ladegast's own currency terms, using
-// per-friend rates rather than EVCC's own (possibly dynamic) tariff.
+// per-guest rates rather than EVCC's own (possibly dynamic) tariff.
 type Summary struct {
 	ChargedKWh float64 `json:"chargedKWh"`
 	SolarKWh   float64 `json:"solarKWh"`
@@ -12,7 +12,7 @@ type Summary struct {
 }
 
 // FilterByVehicle returns only the sessions belonging to the given EVCC
-// vehicle name, so one friend never sees another friend's charging data.
+// vehicle name, so one guest never sees another guest's charging data.
 func FilterByVehicle(sessions []Session, vehicleName string) []Session {
 	var out []Session
 	for _, s := range sessions {

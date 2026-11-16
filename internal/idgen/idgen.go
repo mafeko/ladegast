@@ -1,4 +1,4 @@
-// Package idgen creates the random identifiers Ladegast hands to friends:
+// Package idgen creates the random identifiers Ladegast hands to guests:
 // UUIDs for permanent login links and numeric PINs.
 package idgen
 

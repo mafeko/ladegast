@@ -8,7 +8,7 @@ import (
 )
 
 // RecordFailedAttempt appends a failed-login timestamp under key (typically
-// "<client-ip>:<friend-id>") and prunes entries older than window in the
+// "<client-ip>:<guest-id>") and prunes entries older than window in the
 // same transaction.
 func (s *Store) RecordFailedAttempt(key string, now time.Time, window time.Duration) error {
 	return s.db.Update(func(tx *bolt.Tx) error {

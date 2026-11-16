@@ -87,7 +87,7 @@ describe('range helper used by explorer', () => {
 })
 
 describe('UsageExplorer without settlements', () => {
-  it('renders chart and table when the friend has no settlement yet', async () => {
+  it('renders chart and table when the guest has no settlement yet', async () => {
     const load = vi.fn().mockResolvedValue([sessionIn(0, 2)])
     const loadSettlements = vi.fn().mockResolvedValue({ settlements: [], open: { since: null, chargedKWh: 5, solarKWh: 0, gridKWh: 0, amountEUR: 1 } })
     const wrapper = mount(UsageExplorer, { props: { cacheKey: 'ns', load, loadSettlements } })

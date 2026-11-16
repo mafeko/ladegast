@@ -2,6 +2,7 @@ package store
 
 import (
 	"os"
+	"path/filepath"
 	"testing"
 	"time"
 
@@ -18,78 +19,78 @@ func openTestStore(t *testing.T) *Store {
 	return s
 }
 
-func TestFriendCRUD(t *testing.T) {
+func TestGuestCRUD(t *testing.T) {
 	s := openTestStore(t)
 
-	f := Friend{ID: "friend-1", Name: "Alex", VehicleName: "vehicle_1", PINHash: "hash"}
-	if err := s.CreateFriend(f); err != nil {
-		t.Fatalf("CreateFriend: %v", err)
+	f := Guest{ID: "guest-1", Name: "Alex", VehicleName: "vehicle_1", PINHash: "hash"}
+	if err := s.CreateGuest(f); err != nil {
+		t.Fatalf("CreateGuest: %v", err)
 	}
-	if err := s.CreateFriend(f); err == nil {
-		t.Fatal("expected error creating duplicate friend, got nil")
+	if err := s.CreateGuest(f); err == nil {
+		t.Fatal("expected error creating duplicate guest, got nil")
 	}
 
-	got, err := s.GetFriend("friend-1")
+	got, err := s.GetGuest("guest-1")
 	if err != nil {
-		t.Fatalf("GetFriend: %v", err)
+		t.Fatalf("GetGuest: %v", err)
 	}
 	if got.Name != "Alex" {
 		t.Errorf("Name = %q, want Alex", got.Name)
 	}
 
-	if _, err := s.GetFriend("missing"); err != ErrNotFound {
-		t.Errorf("GetFriend(missing) err = %v, want ErrNotFound", err)
+	if _, err := s.GetGuest("missing"); err != ErrNotFound {
+		t.Errorf("GetGuest(missing) err = %v, want ErrNotFound", err)
 	}
 
 	f.Name = "Alexandra"
-	if err := s.UpdateFriend(f); err != nil {
-		t.Fatalf("UpdateFriend: %v", err)
+	if err := s.UpdateGuest(f); err != nil {
+		t.Fatalf("UpdateGuest: %v", err)
 	}
-	got, _ = s.GetFriend("friend-1")
+	got, _ = s.GetGuest("guest-1")
 	if got.Name != "Alexandra" {
 		t.Errorf("Name after update = %q, want Alexandra", got.Name)
 	}
 
-	if err := s.UpdateFriend(Friend{ID: "missing"}); err != ErrNotFound {
-		t.Errorf("UpdateFriend(missing) err = %v, want ErrNotFound", err)
+	if err := s.UpdateGuest(Guest{ID: "missing"}); err != ErrNotFound {
+		t.Errorf("UpdateGuest(missing) err = %v, want ErrNotFound", err)
 	}
 
-	list, err := s.ListFriends()
+	list, err := s.ListGuests()
 	if err != nil {
-		t.Fatalf("ListFriends: %v", err)
+		t.Fatalf("ListGuests: %v", err)
 	}
 	if len(list) != 1 {
 		t.Errorf("len(list) = %d, want 1", len(list))
 	}
 }
 
-func TestListFriends_CorruptData(t *testing.T) {
+func TestListGuests_CorruptData(t *testing.T) {
 	s := openTestStore(t)
 	err := s.db.Update(func(tx *bolt.Tx) error {
-		return tx.Bucket([]byte(bucketFriends)).Put([]byte("broken"), []byte("not json"))
+		return tx.Bucket([]byte(bucketGuests)).Put([]byte("broken"), []byte("not json"))
 	})
 	if err != nil {
 		t.Fatalf("seed corrupt data: %v", err)
 	}
-	if _, err := s.ListFriends(); err == nil {
-		t.Fatal("expected error listing friends with corrupt data, got nil")
+	if _, err := s.ListGuests(); err == nil {
+		t.Fatal("expected error listing guests with corrupt data, got nil")
 	}
 }
 
-func TestDeleteFriend(t *testing.T) {
+func TestDeleteGuest(t *testing.T) {
 	s := openTestStore(t)
-	f := Friend{ID: "friend-1", Name: "Alex"}
-	if err := s.CreateFriend(f); err != nil {
-		t.Fatalf("CreateFriend: %v", err)
+	f := Guest{ID: "guest-1", Name: "Alex"}
+	if err := s.CreateGuest(f); err != nil {
+		t.Fatalf("CreateGuest: %v", err)
 	}
-	if err := s.DeleteFriend("friend-1"); err != nil {
-		t.Fatalf("DeleteFriend: %v", err)
+	if err := s.DeleteGuest("guest-1"); err != nil {
+		t.Fatalf("DeleteGuest: %v", err)
 	}
-	if _, err := s.GetFriend("friend-1"); err != ErrNotFound {
-		t.Errorf("GetFriend after delete err = %v, want ErrNotFound", err)
+	if _, err := s.GetGuest("guest-1"); err != ErrNotFound {
+		t.Errorf("GetGuest after delete err = %v, want ErrNotFound", err)
 	}
-	if err := s.DeleteFriend("friend-1"); err != ErrNotFound {
-		t.Errorf("DeleteFriend(missing) err = %v, want ErrNotFound", err)
+	if err := s.DeleteGuest("guest-1"); err != ErrNotFound {
+		t.Errorf("DeleteGuest(missing) err = %v, want ErrNotFound", err)
 	}
 }
 
@@ -155,7 +156,7 @@ func TestAdminCRUD(t *testing.T) {
 
 func TestRateLimit(t *testing.T) {
 	s := openTestStore(t)
-	key := "1.2.3.4:friend-1"
+	key := "1.2.3.4:guest-1"
 	now := time.Now()
 	window := 15 * time.Minute
 
@@ -203,7 +204,7 @@ func TestRateLimit(t *testing.T) {
 
 func TestCountRecentFailures_CorruptData(t *testing.T) {
 	s := openTestStore(t)
-	key := "1.2.3.4:friend-1"
+	key := "1.2.3.4:guest-1"
 
 	err := s.db.Update(func(tx *bolt.Tx) error {
 		return tx.Bucket([]byte(bucketRateLimit)).Put([]byte(key), []byte("not json"))
@@ -214,5 +215,42 @@ func TestCountRecentFailures_CorruptData(t *testing.T) {
 
 	if _, err := s.CountRecentFailures(key, time.Now(), 15*time.Minute); err == nil {
 		t.Fatal("expected error reading corrupt rate-limit data, got nil")
+	}
+}
+
+func TestOpen_MigratesLegacyFriendsBucket(t *testing.T) {
+	dir := t.TempDir()
+	db, err := bolt.Open(filepath.Join(dir, "ladegast.db"), 0o600, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	err = db.Update(func(tx *bolt.Tx) error {
+		b, err := tx.CreateBucket([]byte("friends"))
+		if err != nil {
+			return err
+		}
+		return b.Put([]byte("id1"), []byte("legacy-value"))
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	db.Close()
+
+	s, err := Open(dir)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer s.Close()
+	err = s.db.View(func(tx *bolt.Tx) error {
+		if tx.Bucket([]byte("friends")) != nil {
+			t.Error("legacy bucket should be gone")
+		}
+		if got := tx.Bucket([]byte(bucketGuests)).Get([]byte("id1")); string(got) != "legacy-value" {
+			t.Errorf("migrated value = %q", got)
+		}
+		return nil
+	})
+	if err != nil {
+		t.Fatal(err)
 	}
 }

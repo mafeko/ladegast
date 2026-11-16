@@ -9,7 +9,7 @@ export interface Summary {
   costEUR: number
 }
 
-export interface FriendInfo {
+export interface GuestInfo {
   id: string
   name: string
   rateSolarPerKWh: number
@@ -17,7 +17,7 @@ export interface FriendInfo {
 }
 
 export interface Dashboard {
-  friend: FriendInfo
+  guest: GuestInfo
   today: Summary
   thisWeek: Summary
   thisMonth: Summary
@@ -33,11 +33,11 @@ export interface SessionView {
   costEUR: number
 }
 
-export interface FriendStatus {
+export interface GuestStatus {
   authenticated: boolean
 }
 
-export interface Friend {
+export interface Guest {
   id: string
   name: string
   vehicleName: string
@@ -48,7 +48,7 @@ export interface Friend {
   link: string
 }
 
-export interface CreateFriendInput {
+export interface CreateGuestInput {
   name: string
   vehicleName: string
   rateSolarPerKWh: number
@@ -57,7 +57,7 @@ export interface CreateFriendInput {
   pin?: string
 }
 
-export interface CreatedFriend {
+export interface CreatedGuest {
   id: string
   pin: string
   link: string

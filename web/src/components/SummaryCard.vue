@@ -6,8 +6,8 @@ const props = defineProps<{ title: string; summary: Summary }>()
 </script>
 
 <template>
-  <section class="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm dark:border-gray-800 dark:bg-gray-900">
-    <h3 class="text-xs font-semibold tracking-wide text-gray-500 uppercase dark:text-gray-400">{{ props.title }}</h3>
+  <section class="box">
+    <h3 class="label-caps">{{ props.title }}</h3>
     <p class="mt-2 text-lg font-semibold tracking-tight">{{ formatKWh(props.summary.chargedKWh) }}</p>
     <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
       davon {{ solarSharePercent(props.summary.solarKWh, props.summary.chargedKWh) }}% Sonne

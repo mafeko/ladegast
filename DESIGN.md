@@ -1,6 +1,6 @@
 # Ladegast — Architektur-Entwurf
 
-Service, über den Freunde per Einmal-Link + PIN ihr Fahrzeug an der heimischen
+Service, über den Gäste per Einmal-Link + PIN ihr Fahrzeug an der heimischen
 Wallbox laden, ohne vollen EVCC-Zugriff zu bekommen. Verifiziert gegen eine
 reale EVCC-Instanz (siehe Abschnitt "EVCC-Integration").
 
@@ -14,14 +14,14 @@ dokumentiert, nicht als Beispiel-Manifeste im Repo (siehe
 
 ## 0. Keine privaten Daten im Repository
 
-- Reale Domains, Freundesnamen, Fahrzeugnamen, API-Keys, PINs, Tarife etc.
+- Reale Domains, Gästenamen, Fahrzeugnamen, API-Keys, PINs, Tarife etc.
   landen **nie** im Git-Verlauf.
 - Jede Konfigurationsdatei mit echten Werten (`.env`, `config.local.*`,
   Secrets) ist in `.gitignore` gelistet.
 - Für jede solche Datei existiert ein versioniertes Template mit
   Platzhaltern, z. B. `.env.example`.
 - Dokumentation/Beispiele nutzen ausschließlich generische Platzhalter
-  (`example.com`, `vehicle_1`, `friend-name`) — nie echte Daten aus diesem
+  (`example.com`, `vehicle_1`, `guest-name`) — nie echte Daten aus diesem
   Projekt.
 
 ```gitignore
@@ -83,7 +83,7 @@ Liste + Typen in `schema/config.md` (bzw. maschinenlesbar in
 |-----------------------------------|----------------------------------------------------|--------------------------|
 | `LADEGAST_LISTEN_ADDR`            | Bind-Adresse HTTP-Server                           | `:8080`                  |
 | `LADEGAST_PUBLIC_BASE_URL`        | Basis-URL, unter der Ladegast von außen erreichbar ist (für Link-Generierung) | *(muss gesetzt werden, keine Annahme)* |
-| `LADEGAST_PUBLIC_PATH_PREFIX`     | Pfadpräfix für Freund-Routen                       | `/public`                |
+| `LADEGAST_PUBLIC_PATH_PREFIX`     | Pfadpräfix für Gast-Routen                       | `/public`                |
 | `LADEGAST_ADMIN_PATH_PREFIX`      | Pfadpräfix für Admin-Routen                        | `/admin`                 |
 | `LADEGAST_DATA_DIR`               | Verzeichnis für die bbolt-Datei                     | `./data`                 |
 | `LADEGAST_SESSION_SECRET`         | Signierschlüssel für Session-Cookies                | *(Pflicht, kein Default)*|
@@ -112,8 +112,8 @@ Liste + Typen in `schema/config.md` (bzw. maschinenlesbar in
   `grid_kwh  = chargedEnergy - solar_kwh`
 - Preis-Felder von EVCC (`price`, `pricePerKWh`) basieren auf EVCC's eigenem
   Tarif und werden **ignoriert** — Ladegast rechnet mit eigenen,
-  pro-Freund-konfigurierbaren Sätzen (`rate_solar_per_kwh`,
-  `rate_grid_per_kwh`, in der Friend-Entität gespeichert, nicht per ENV).
+  pro-Gast-konfigurierbaren Sätzen (`rate_solar_per_kwh`,
+  `rate_grid_per_kwh`, in der Gast-Entität gespeichert, nicht per ENV).
 - Modi (diese Version): `off`, `smart` (PV-Überschuss), `now` (Schnellladen).
   Für MVP reichen `smart` ↔ `now`.
 - Mode-Switch: `POST /api/vehicles/{name}/mode/{mode}`, wobei `{name}` der
@@ -128,7 +128,7 @@ Liste + Typen in `schema/config.md` (bzw. maschinenlesbar in
 ## 4. Datenmodell (bbolt, Go-Structs)
 
 ```go
-type Friend struct {
+type Guest struct {
     ID                string    // uuid, auch Link-Slug
     Name              string
     VehicleName       string    // EVCC-Config-Name, z.B. "vehicle_1"
@@ -146,26 +146,26 @@ type Admin struct {
 
 type FailedLoginAttempt struct {
     IP        string
-    FriendID  string
+    GuestID  string
     Timestamp time.Time
 }
 ```
 
-Buckets: `friends`, `admins`, `rate_limit`. Ladedaten selbst: kein Bucket,
+Buckets: `guests`, `admins`, `rate_limit`. Ladedaten selbst: kein Bucket,
 nur Durchleitung/Aggregation aus EVCC. Speicherort: `LADEGAST_DATA_DIR`
 (austauschbar: lokales Verzeichnis, gemountetes Volume, Netzwerk-Share — für
 den Code irrelevant, solange der Pfad beschreibbar ist).
 
-## 5. Auth-Flow (Freund)
+## 5. Auth-Flow (Gast)
 
-1. Freund öffnet `{PUBLIC_BASE_URL}{PUBLIC_PATH_PREFIX}/l/{uuid}`.
+1. Gast öffnet `{PUBLIC_BASE_URL}{PUBLIC_PATH_PREFIX}/l/{uuid}`.
 2. Seite fragt PIN ab. POST an `.../l/{uuid}/login` mit PIN.
 3. Backend: IP-Rate-Limit prüfen (`LADEGAST_RATE_LIMIT_*`), PIN-Hash
    vergleichen.
 4. Bei Erfolg: httpOnly-Session-Cookie (kurze TTL, z. B. 7 Tage, kein
    Passwort-Reset-Flow nötig da Link dauerhaft gültig bleibt), signiert mit
    `LADEGAST_SESSION_SECRET`.
-5. Alle weiteren `.../l/{uuid}/*`-Requests prüfen Cookie gegen Friend-ID.
+5. Alle weiteren `.../l/{uuid}/*`-Requests prüfen Cookie gegen Gast-ID.
 
 **Admin-Login:** klassisch Username/Passwort (bcrypt) + Session-Cookie,
 ausschließlich über `{ADMIN_PATH_PREFIX}/login`.
@@ -190,22 +190,22 @@ POST /public/l/{uuid}/mode          { mode: "smart"|"now" }
 ```
 POST   /admin/login
 POST   /admin/logout
-GET    /admin/friends
-GET    /admin/vehicles                       Fahrzeugnamen aus EVCC-Sessions, die noch keinem Freund zugeordnet sind
-POST   /admin/friends                        neuen Freund anlegen (generiert UUID; PIN optional vorgebbar, sonst zufällig)
-PUT    /admin/friends/{id}                   Tarife/Name/Fahrzeug ändern
-DELETE /admin/friends/{id}                   Freund löschen (Link und PIN sofort ungültig)
-POST   /admin/friends/{id}/regenerate-link   neue UUID, alte ungültig
-POST   /admin/friends/{id}/reset-pin         neue PIN setzen ({pin} optional, 4-12 Ziffern; sonst zufällig)
-GET    /admin/friends/{id}/view-as/dashboard  identisch zu .../l/{uuid}/dashboard, ohne PIN
-GET    /admin/friends/{id}/view-as/sessions   identisch zu .../l/{uuid}/sessions, ohne PIN
+GET    /admin/guests
+GET    /admin/vehicles                       Fahrzeugnamen aus EVCC-Sessions, die noch keinem Gast zugeordnet sind
+POST   /admin/guests                        neuen Gast anlegen (generiert UUID; PIN optional vorgebbar, sonst zufällig)
+PUT    /admin/guests/{id}                   Tarife/Name/Fahrzeug ändern
+DELETE /admin/guests/{id}                   Gast löschen (Link und PIN sofort ungültig)
+POST   /admin/guests/{id}/regenerate-link   neue UUID, alte ungültig
+POST   /admin/guests/{id}/reset-pin         neue PIN setzen ({pin} optional, 4-12 Ziffern; sonst zufällig)
+GET    /admin/guests/{id}/view-as/dashboard  identisch zu .../l/{uuid}/dashboard, ohne PIN
+GET    /admin/guests/{id}/view-as/sessions   identisch zu .../l/{uuid}/sessions, ohne PIN
 ```
 
 ### Frontend (eingebettetes SPA, außerhalb beider Präfixe)
 ```
 GET /                                 SPA-Shell
 GET /assets/*, /favicon.svg           statische Build-Artefakte
-GET /public/l/{uuid}                  SPA-Shell (Freund-Seite; ruft intern .../status etc. auf)
+GET /public/l/{uuid}                  SPA-Shell (Gast-Seite; ruft intern .../status etc. auf)
 GET /admin                            SPA-Shell (Admin-Seite)
 GET /admin/view-as/{id}                SPA-Shell (Admin "Ansehen als")
 ```
@@ -218,7 +218,7 @@ mitgeschützt, sobald der Reverse Proxy diesen Pfad extern abschneidet.
 ## 7. Dashboard-Aggregation
 
 Pro Request: `GET /api/sessions` von EVCC holen, nach `vehicle ==
-friend.VehicleName` filtern (serverseitig, Freund sieht nie fremde
+guest.VehicleName` filtern (serverseitig, Gast sieht nie fremde
 Fahrzeuge), dann gruppieren:
 
 - Tag: `created` auf Kalendertag runden
@@ -235,7 +235,7 @@ In-Memory-Cache mit kurzer TTL, falls EVCC-Calls spürbar werden.
 /                       Go-Module-Root, main.go, internal/...
   internal/config/      ENV-Parsing → Config-Struct, mit Defaults & Validierung
   internal/evcc/        EVCC-Client (sessions, vehicle-mode)
-  internal/store/       bbolt-Zugriff (Friend, Admin, RateLimit)
+  internal/store/       bbolt-Zugriff (Gast, Admin, RateLimit)
   internal/httpserver/  Router, Public- und Admin-Handler
   web/                  Eigenständiges Vue-Frontend (Vite, eigenes package.json)
 schema/
@@ -262,10 +262,10 @@ Tailscale).
 - `{name}`-Format für `/api/vehicles/{name}/mode/{mode}` vor dem ersten
   Schreibtest gegen die echte EVCC-Konfiguration verifizieren (bisher nur
   Lesezugriffe erlaubt/getestet).
-- Was passiert, wenn ein Freund `now` setzt und "vergisst", zurück auf
+- Was passiert, wenn ein Gast `now` setzt und "vergisst", zurück auf
   `smart` zu schalten? (Timeout/Auto-Reset nach X Stunden? Für MVP evtl.
   bewusst weglassen und später nachrüsten.)
-- Mehrere Freunde mit gleichem Fahrzeug-Namen in EVCC (Edge Case, aktuell
-  nicht vorgesehen — 1 Freund : 1 Fahrzeug fix).
+- Mehrere Gäste mit gleichem Fahrzeug-Namen in EVCC (Edge Case, aktuell
+  nicht vorgesehen — 1 Gast : 1 Fahrzeug fix).
 - Backup/Recovery der Datenbank-Datei testen, bevor produktiv genutzt
   (unabhängig vom konkreten Storage-Backend).

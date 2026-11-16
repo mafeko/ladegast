@@ -11,9 +11,9 @@ import (
 
 var ErrNotFound = errors.New("not found")
 
-// Friend is a person allowed to charge their vehicle, identified by a
+// Guest is a person allowed to charge their vehicle, identified by a
 // permanent link (ID, used as the URL slug) protected by a PIN.
-type Friend struct {
+type Guest struct {
 	ID                string       `json:"id"`
 	Name              string       `json:"name"`
 	VehicleName       string       `json:"vehicleName"` // EVCC config name
@@ -25,24 +25,24 @@ type Friend struct {
 	Settlements       []Settlement `json:"settlements,omitempty"`
 }
 
-// Settlement marks the moment a friend paid for all charging up to At. Only
+// Settlement marks the moment a guest paid for all charging up to At. Only
 // the timestamp is stored; amounts are derived from EVCC sessions between
-// consecutive settlements. Stored inside the Friend so a regenerated link
-// carries its history along and deleting the friend removes it.
+// consecutive settlements. Stored inside the Guest so a regenerated link
+// carries its history along and deleting the guest removes it.
 type Settlement struct {
 	ID string    `json:"id"`
 	At time.Time `json:"at"`
 }
 
-// AddSettlement appends a settlement to the friend's record.
-func (s *Store) AddSettlement(friendID string, st Settlement) error {
+// AddSettlement appends a settlement to the guest's record.
+func (s *Store) AddSettlement(guestID string, st Settlement) error {
 	return s.db.Update(func(tx *bolt.Tx) error {
-		b := tx.Bucket([]byte(bucketFriends))
-		v := b.Get([]byte(friendID))
+		b := tx.Bucket([]byte(bucketGuests))
+		v := b.Get([]byte(guestID))
 		if v == nil {
 			return ErrNotFound
 		}
-		var f Friend
+		var f Guest
 		if err := json.Unmarshal(v, &f); err != nil {
 			return err
 		}
@@ -51,16 +51,16 @@ func (s *Store) AddSettlement(friendID string, st Settlement) error {
 	})
 }
 
-// DeleteSettlement removes one settlement; ErrNotFound if friend or
+// DeleteSettlement removes one settlement; ErrNotFound if guest or
 // settlement does not exist.
-func (s *Store) DeleteSettlement(friendID, settlementID string) error {
+func (s *Store) DeleteSettlement(guestID, settlementID string) error {
 	return s.db.Update(func(tx *bolt.Tx) error {
-		b := tx.Bucket([]byte(bucketFriends))
-		v := b.Get([]byte(friendID))
+		b := tx.Bucket([]byte(bucketGuests))
+		v := b.Get([]byte(guestID))
 		if v == nil {
 			return ErrNotFound
 		}
-		var f Friend
+		var f Guest
 		if err := json.Unmarshal(v, &f); err != nil {
 			return err
 		}
@@ -78,19 +78,19 @@ func (s *Store) DeleteSettlement(friendID, settlementID string) error {
 	})
 }
 
-func (s *Store) CreateFriend(f Friend) error {
+func (s *Store) CreateGuest(f Guest) error {
 	return s.db.Update(func(tx *bolt.Tx) error {
-		b := tx.Bucket([]byte(bucketFriends))
+		b := tx.Bucket([]byte(bucketGuests))
 		if b.Get([]byte(f.ID)) != nil {
-			return fmt.Errorf("friend %q already exists", f.ID)
+			return fmt.Errorf("guest %q already exists", f.ID)
 		}
 		return putJSON(b, f.ID, f)
 	})
 }
 
-func (s *Store) UpdateFriend(f Friend) error {
+func (s *Store) UpdateGuest(f Guest) error {
 	return s.db.Update(func(tx *bolt.Tx) error {
-		b := tx.Bucket([]byte(bucketFriends))
+		b := tx.Bucket([]byte(bucketGuests))
 		if b.Get([]byte(f.ID)) == nil {
 			return ErrNotFound
 		}
@@ -98,10 +98,10 @@ func (s *Store) UpdateFriend(f Friend) error {
 	})
 }
 
-func (s *Store) GetFriend(id string) (Friend, error) {
-	var f Friend
+func (s *Store) GetGuest(id string) (Guest, error) {
+	var f Guest
 	err := s.db.View(func(tx *bolt.Tx) error {
-		b := tx.Bucket([]byte(bucketFriends))
+		b := tx.Bucket([]byte(bucketGuests))
 		v := b.Get([]byte(id))
 		if v == nil {
 			return ErrNotFound
@@ -111,9 +111,9 @@ func (s *Store) GetFriend(id string) (Friend, error) {
 	return f, err
 }
 
-func (s *Store) DeleteFriend(id string) error {
+func (s *Store) DeleteGuest(id string) error {
 	return s.db.Update(func(tx *bolt.Tx) error {
-		b := tx.Bucket([]byte(bucketFriends))
+		b := tx.Bucket([]byte(bucketGuests))
 		if b.Get([]byte(id)) == nil {
 			return ErrNotFound
 		}
@@ -121,12 +121,12 @@ func (s *Store) DeleteFriend(id string) error {
 	})
 }
 
-func (s *Store) ListFriends() ([]Friend, error) {
-	var out []Friend
+func (s *Store) ListGuests() ([]Guest, error) {
+	var out []Guest
 	err := s.db.View(func(tx *bolt.Tx) error {
-		b := tx.Bucket([]byte(bucketFriends))
+		b := tx.Bucket([]byte(bucketGuests))
 		return b.ForEach(func(_, v []byte) error {
-			var f Friend
+			var f Guest
 			if err := json.Unmarshal(v, &f); err != nil {
 				return err
 			}

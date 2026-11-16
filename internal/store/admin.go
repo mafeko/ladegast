@@ -6,7 +6,7 @@ import (
 	bolt "go.etcd.io/bbolt"
 )
 
-// Admin is the single operator account managing friends. Multiple admin
+// Admin is the single operator account managing guests. Multiple admin
 // accounts are supported by the schema even though the MVP provisions
 // exactly one at first boot.
 type Admin struct {

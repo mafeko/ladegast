@@ -3,11 +3,11 @@
 // request/response shaping, so every function is directly unit-testable
 // by mocking global fetch.
 import type {
-  CreateFriendInput,
-  CreatedFriend,
+  CreateGuestInput,
+  CreatedGuest,
   Dashboard,
-  Friend,
-  FriendStatus,
+  Guest,
+  GuestStatus,
   Mode,
   RegeneratedLink,
   SessionView,
@@ -34,7 +34,7 @@ const ERROR_MESSAGES: Record<string, string> = {
   'too many attempts, try again later': 'Zu viele Fehlversuche. Bitte später erneut versuchen.',
   'not authenticated': 'Nicht angemeldet.',
   'unknown link': 'Dieser Link ist ungültig.',
-  'friend not found': 'Freund nicht gefunden.',
+  'guest not found': 'Gast nicht gefunden.',
   'could not reach EVCC': 'EVCC ist nicht erreichbar.',
   'could not set mode': 'Lademodus konnte nicht gesetzt werden.',
   'invalid request body': 'Ungültige Eingabe.',
@@ -68,17 +68,17 @@ async function request<T>(method: string, url: string, body?: unknown): Promise<
   return (await res.json()) as T
 }
 
-// --- Friend-facing API (PUBLIC_PREFIX) ---
+// --- Guest-facing API (PUBLIC_PREFIX) ---
 
-export function getFriendStatus(uuid: string): Promise<FriendStatus> {
+export function getGuestStatus(uuid: string): Promise<GuestStatus> {
   return request('GET', `${PUBLIC_PREFIX}/l/${uuid}/status`)
 }
 
-export function friendLogin(uuid: string, pin: string): Promise<{ name: string }> {
+export function guestLogin(uuid: string, pin: string): Promise<{ name: string }> {
   return request('POST', `${PUBLIC_PREFIX}/l/${uuid}/login`, { pin })
 }
 
-export function friendLogout(uuid: string): Promise<void> {
+export function guestLogout(uuid: string): Promise<void> {
   return request('POST', `${PUBLIC_PREFIX}/l/${uuid}/logout`, {})
 }
 
@@ -108,53 +108,53 @@ export function adminLogout(): Promise<void> {
   return request('POST', `${ADMIN_PREFIX}/logout`, {})
 }
 
-export function listFriends(): Promise<Friend[]> {
-  return request('GET', `${ADMIN_PREFIX}/friends`)
+export function listGuests(): Promise<Guest[]> {
+  return request('GET', `${ADMIN_PREFIX}/guests`)
 }
 
-/** EVCC vehicle names seen in sessions and not yet assigned to a friend. */
+/** EVCC vehicle names seen in sessions and not yet assigned to a guest. */
 export function listVehicles(): Promise<string[]> {
   return request('GET', `${ADMIN_PREFIX}/vehicles`)
 }
 
-export function createFriend(input: CreateFriendInput): Promise<CreatedFriend> {
-  return request('POST', `${ADMIN_PREFIX}/friends`, input)
+export function createGuest(input: CreateGuestInput): Promise<CreatedGuest> {
+  return request('POST', `${ADMIN_PREFIX}/guests`, input)
 }
 
-export function updateFriend(id: string, input: CreateFriendInput): Promise<Friend> {
-  return request('PUT', `${ADMIN_PREFIX}/friends/${id}`, input)
+export function updateGuest(id: string, input: CreateGuestInput): Promise<Guest> {
+  return request('PUT', `${ADMIN_PREFIX}/guests/${id}`, input)
 }
 
 export function regenerateLink(id: string): Promise<RegeneratedLink> {
-  return request('POST', `${ADMIN_PREFIX}/friends/${id}/regenerate-link`, {})
+  return request('POST', `${ADMIN_PREFIX}/guests/${id}/regenerate-link`, {})
 }
 
 // Without pin the server generates a random one.
 export function resetPin(id: string, pin?: string): Promise<{ pin: string }> {
-  return request('POST', `${ADMIN_PREFIX}/friends/${id}/reset-pin`, pin ? { pin } : {})
+  return request('POST', `${ADMIN_PREFIX}/guests/${id}/reset-pin`, pin ? { pin } : {})
 }
 
-export function deleteFriend(id: string): Promise<void> {
-  return request('DELETE', `${ADMIN_PREFIX}/friends/${id}`)
+export function deleteGuest(id: string): Promise<void> {
+  return request('DELETE', `${ADMIN_PREFIX}/guests/${id}`)
 }
 
 export function viewAsDashboard(id: string): Promise<Dashboard> {
-  return request('GET', `${ADMIN_PREFIX}/friends/${id}/view-as/dashboard`)
+  return request('GET', `${ADMIN_PREFIX}/guests/${id}/view-as/dashboard`)
 }
 
 export function viewAsSessions(id: string): Promise<SessionView[]> {
-  return request('GET', `${ADMIN_PREFIX}/friends/${id}/view-as/sessions`)
+  return request('GET', `${ADMIN_PREFIX}/guests/${id}/view-as/sessions`)
 }
 
 export function viewAsSettlements(id: string): Promise<Settlements> {
-  return request('GET', `${ADMIN_PREFIX}/friends/${id}/view-as/settlements`)
+  return request('GET', `${ADMIN_PREFIX}/guests/${id}/view-as/settlements`)
 }
 
-/** Records that the friend has paid everything up to `at` (ISO string; server default: now). */
+/** Records that the guest has paid everything up to `at` (ISO string; server default: now). */
 export function createSettlement(id: string, at?: string): Promise<{ id: string; at: string }> {
-  return request('POST', `${ADMIN_PREFIX}/friends/${id}/settlements`, at ? { at } : {})
+  return request('POST', `${ADMIN_PREFIX}/guests/${id}/settlements`, at ? { at } : {})
 }
 
 export function deleteSettlement(id: string, settlementId: string): Promise<void> {
-  return request('DELETE', `${ADMIN_PREFIX}/friends/${id}/settlements/${settlementId}`)
+  return request('DELETE', `${ADMIN_PREFIX}/guests/${id}/settlements/${settlementId}`)
 }

@@ -8,9 +8,9 @@ describe('router', () => {
     expect(router.currentRoute.value.fullPath).toBe('/admin')
   })
 
-  it('resolves the friend link route', () => {
+  it('resolves the guest link route', () => {
     const resolved = router.resolve('/public/l/abc-123')
-    expect(resolved.name).toBe('friend')
+    expect(resolved.name).toBe('guest')
     expect(resolved.params.uuid).toBe('abc-123')
   })
 

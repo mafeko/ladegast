@@ -1,6 +1,6 @@
 // Package authtoken creates and verifies compact, signed session tokens
-// used for both friend and admin login cookies. A token proves that its
-// subject (a friend ID or admin username) was issued by this server and
+// used for both guest and admin login cookies. A token proves that its
+// subject (a guest ID or admin username) was issued by this server and
 // has not expired - nothing more.
 package authtoken
 

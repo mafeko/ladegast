@@ -18,13 +18,13 @@ func TestSettlementsFor_SumsBetweenSettlements(t *testing.T) {
 	sess := func(d int, kwh float64) evcc.Session {
 		return evcc.Session{Created: day(d), Vehicle: "v", ChargedEnergy: kwh, SolarPercentage: &pct}
 	}
-	friend := store.Friend{
+	guest := store.Guest{
 		VehicleName:    "v",
 		RateGridPerKWh: 0.5,
 		// deliberately unsorted
 		Settlements: []store.Settlement{{ID: "b", At: day(20)}, {ID: "a", At: day(10)}},
 	}
-	got := settlementsFor(friend, []evcc.Session{
+	got := settlementsFor(guest, []evcc.Session{
 		sess(5, 10), sess(15, 20), sess(25, 4),
 		{Created: day(5), Vehicle: "other", ChargedEnergy: 99, SolarPercentage: &pct},
 	})
@@ -46,7 +46,7 @@ func TestSettlementsFor_SumsBetweenSettlements(t *testing.T) {
 
 func TestAdminSettlements_CreateListDelete(t *testing.T) {
 	client, base := adminClient(t)
-	id, pin := createFriendVia(t, client, base, createFriendRequest{
+	id, pin := createGuestVia(t, client, base, createGuestRequest{
 		Name: "Alex", VehicleName: "vehicle_1", RateSolarPerKWh: 0.1, RateGridPerKWh: 0.3,
 	})
 
@@ -58,7 +58,7 @@ func TestAdminSettlements_CreateListDelete(t *testing.T) {
 		Open struct{ AmountEUR float64 }
 	}
 	list := func() view {
-		resp, err := client.Get(base + "/admin/friends/" + id + "/view-as/settlements")
+		resp, err := client.Get(base + "/admin/guests/" + id + "/view-as/settlements")
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -71,7 +71,7 @@ func TestAdminSettlements_CreateListDelete(t *testing.T) {
 		t.Fatalf("initial = %+v, want no settlements and open 2.00", v)
 	}
 
-	resp := doJSON(t, client, http.MethodPost, base+"/admin/friends/"+id+"/settlements", "")
+	resp := doJSON(t, client, http.MethodPost, base+"/admin/guests/"+id+"/settlements", "")
 	if resp.StatusCode != http.StatusCreated {
 		t.Fatalf("create status = %d, want 201", resp.StatusCode)
 	}
@@ -82,23 +82,23 @@ func TestAdminSettlements_CreateListDelete(t *testing.T) {
 		t.Fatalf("after create = %+v, want one settlement of 2.00 and open 0", v)
 	}
 
-	// friend sees the same data
-	friendClient := newClientWithJar(t)
-	mustPostJSON(t, friendClient, base+"/public/l/"+id+"/login", map[string]string{"pin": pin}).Body.Close()
-	fresp, err := friendClient.Get(base + "/public/l/" + id + "/settlements")
+	// guest sees the same data
+	guestClient := newClientWithJar(t)
+	mustPostJSON(t, guestClient, base+"/public/l/"+id+"/login", map[string]string{"pin": pin}).Body.Close()
+	fresp, err := guestClient.Get(base + "/public/l/" + id + "/settlements")
 	if err != nil || fresp.StatusCode != http.StatusOK {
-		t.Fatalf("friend settlements: %v / %v", err, fresp)
+		t.Fatalf("guest settlements: %v / %v", err, fresp)
 	}
 	fresp.Body.Close()
 
 	future := time.Now().Add(48 * time.Hour).Format(time.RFC3339)
-	resp = doJSON(t, client, http.MethodPost, base+"/admin/friends/"+id+"/settlements", `{"at":"`+future+`"}`)
+	resp = doJSON(t, client, http.MethodPost, base+"/admin/guests/"+id+"/settlements", `{"at":"`+future+`"}`)
 	resp.Body.Close()
 	if resp.StatusCode != http.StatusBadRequest {
 		t.Errorf("future settlement status = %d, want 400", resp.StatusCode)
 	}
 
-	resp = doJSON(t, client, http.MethodDelete, base+"/admin/friends/"+id+"/settlements/"+v.Settlements[0].ID, "")
+	resp = doJSON(t, client, http.MethodDelete, base+"/admin/guests/"+id+"/settlements/"+v.Settlements[0].ID, "")
 	resp.Body.Close()
 	if resp.StatusCode != http.StatusNoContent {
 		t.Fatalf("delete status = %d, want 204", resp.StatusCode)
@@ -106,7 +106,7 @@ func TestAdminSettlements_CreateListDelete(t *testing.T) {
 	if v := list(); len(v.Settlements) != 0 {
 		t.Errorf("after delete = %+v, want none", v)
 	}
-	resp = doJSON(t, client, http.MethodDelete, base+"/admin/friends/"+id+"/settlements/nope", "")
+	resp = doJSON(t, client, http.MethodDelete, base+"/admin/guests/"+id+"/settlements/nope", "")
 	resp.Body.Close()
 	if resp.StatusCode != http.StatusNotFound {
 		t.Errorf("delete unknown status = %d, want 404", resp.StatusCode)
@@ -114,7 +114,7 @@ func TestAdminSettlements_CreateListDelete(t *testing.T) {
 }
 
 func TestSettlementsFor_NoSettlementsEncodesEmptyArray(t *testing.T) {
-	got := settlementsFor(store.Friend{VehicleName: "v"}, nil)
+	got := settlementsFor(store.Guest{VehicleName: "v"}, nil)
 	b, err := json.Marshal(got)
 	if err != nil {
 		t.Fatal(err)

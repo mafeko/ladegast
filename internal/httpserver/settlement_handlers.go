@@ -35,14 +35,14 @@ type settlementsResponse struct {
 	Open        openAmount       `json:"open"`
 }
 
-// settlementsFor derives each settlement's amount from the friend's sessions
+// settlementsFor derives each settlement's amount from the guest's sessions
 // between the previous settlement (inclusive) and this one (exclusive), priced
-// with the friend's current rates. Settlements are returned oldest first.
-func settlementsFor(friend store.Friend, sessions []evcc.Session) settlementsResponse {
-	sts := append([]store.Settlement(nil), friend.Settlements...)
+// with the guest's current rates. Settlements are returned oldest first.
+func settlementsFor(guest store.Guest, sessions []evcc.Session) settlementsResponse {
+	sts := append([]store.Settlement(nil), guest.Settlements...)
 	sort.Slice(sts, func(i, j int) bool { return sts[i].At.Before(sts[j].At) })
 
-	own := evcc.FilterByVehicle(sessions, friend.VehicleName)
+	own := evcc.FilterByVehicle(sessions, guest.VehicleName)
 	between := func(from, to time.Time) evcc.Summary {
 		var in []evcc.Session
 		for _, sess := range own {
@@ -50,7 +50,7 @@ func settlementsFor(friend store.Friend, sessions []evcc.Session) settlementsRes
 				in = append(in, sess)
 			}
 		}
-		return evcc.Summarize(in, friend.RateSolarPerKWh, friend.RateGridPerKWh)
+		return evcc.Summarize(in, guest.RateSolarPerKWh, guest.RateGridPerKWh)
 	}
 
 	resp := settlementsResponse{Settlements: make([]settlementView, 0, len(sts))}
@@ -71,29 +71,29 @@ func settlementsFor(friend store.Friend, sessions []evcc.Session) settlementsRes
 	return resp
 }
 
-func (s *Server) writeSettlements(w http.ResponseWriter, r *http.Request, friend store.Friend) {
+func (s *Server) writeSettlements(w http.ResponseWriter, r *http.Request, guest store.Guest) {
 	sessions, err := s.evcc.Sessions(r.Context(), 0, 0)
 	if err != nil {
 		writeError(w, http.StatusBadGateway, "could not reach EVCC")
 		return
 	}
-	writeJSON(w, http.StatusOK, settlementsFor(friend, sessions))
+	writeJSON(w, http.StatusOK, settlementsFor(guest, sessions))
 }
 
-func (s *Server) handleFriendSettlements(w http.ResponseWriter, r *http.Request, friend store.Friend) {
-	s.writeSettlements(w, r, friend)
+func (s *Server) handleGuestSettlements(w http.ResponseWriter, r *http.Request, guest store.Guest) {
+	s.writeSettlements(w, r, guest)
 }
 
 func (s *Server) handleAdminViewAsSettlements(w http.ResponseWriter, r *http.Request) {
-	friend, err := s.store.GetFriend(r.PathValue("id"))
+	guest, err := s.store.GetGuest(r.PathValue("id"))
 	if err != nil {
-		writeError(w, http.StatusNotFound, "friend not found")
+		writeError(w, http.StatusNotFound, "guest not found")
 		return
 	}
-	s.writeSettlements(w, r, friend)
+	s.writeSettlements(w, r, guest)
 }
 
-// handleAdminCreateSettlement records that the friend has paid up to now, or
+// handleAdminCreateSettlement records that the guest has paid up to now, or
 // up to the optional {"at": RFC3339} time in the body.
 func (s *Server) handleAdminCreateSettlement(w http.ResponseWriter, r *http.Request) {
 	id := r.PathValue("id")
@@ -115,7 +115,7 @@ func (s *Server) handleAdminCreateSettlement(w http.ResponseWriter, r *http.Requ
 	st := store.Settlement{ID: idgen.UUID(), At: body.At}
 	if err := s.store.AddSettlement(id, st); err != nil {
 		if errors.Is(err, store.ErrNotFound) {
-			writeError(w, http.StatusNotFound, "friend not found")
+			writeError(w, http.StatusNotFound, "guest not found")
 			return
 		}
 		writeError(w, http.StatusInternalServerError, "internal error")
