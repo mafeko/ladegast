@@ -1,3 +1,11 @@
+# [1.3.0](https://github.com/mafeko/ladegast/compare/v1.2.0...v1.3.0) (2026-11-16)
+
+
+### Features
+
+* **web:** evcc-style UI with guest edit dialog, rename friend to guest ([f3ff610](https://github.com/mafeko/ladegast/commit/f3ff610fcc716020e57dc5da026d3bdb6a6aa680))
+* **web:** suggest unassigned EVCC vehicles in admin friend form ([9b1d7fb](https://github.com/mafeko/ladegast/commit/9b1d7fb256036d69531a79395f87e9a72d09447a))
+
 # [1.2.0](https://github.com/mafeko/ladegast/compare/v1.1.0...v1.2.0) (2026-10-29)
 
 
