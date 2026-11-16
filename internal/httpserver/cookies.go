@@ -8,9 +8,9 @@ import (
 )
 
 const (
-	friendCookieName = "ladegast_friend_session"
-	adminCookieName  = "ladegast_admin_session"
-	sessionTTL       = 7 * 24 * time.Hour
+	guestCookieName = "ladegast_guest_session"
+	adminCookieName = "ladegast_admin_session"
+	sessionTTL      = 7 * 24 * time.Hour
 )
 
 func (s *Server) setSessionCookie(w http.ResponseWriter, name, subject string) error {

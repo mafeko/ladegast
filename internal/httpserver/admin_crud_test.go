@@ -35,9 +35,9 @@ func doJSON(t *testing.T, client *http.Client, method, url, body string) *http.R
 	return resp
 }
 
-func createFriendVia(t *testing.T, client *http.Client, base string, req createFriendRequest) (id, pin string) {
+func createGuestVia(t *testing.T, client *http.Client, base string, req createGuestRequest) (id, pin string) {
 	t.Helper()
-	resp := mustPostJSON(t, client, base+"/admin/friends", req)
+	resp := mustPostJSON(t, client, base+"/admin/guests", req)
 	if resp.StatusCode != http.StatusCreated {
 		t.Fatalf("create status = %d, want 201", resp.StatusCode)
 	}
@@ -53,10 +53,10 @@ func loginStatus(t *testing.T, base, id, pin string) int {
 	return resp.StatusCode
 }
 
-func TestAdminCreateFriend_ChosenPIN(t *testing.T) {
+func TestAdminCreateGuest_ChosenPIN(t *testing.T) {
 	client, base := adminClient(t)
 
-	id, pin := createFriendVia(t, client, base, createFriendRequest{Name: "Alex", VehicleName: "vehicle_1", PIN: "424242"})
+	id, pin := createGuestVia(t, client, base, createGuestRequest{Name: "Alex", VehicleName: "vehicle_1", PIN: "424242"})
 	if pin != "424242" {
 		t.Errorf("returned pin = %q, want the chosen one", pin)
 	}
@@ -65,16 +65,16 @@ func TestAdminCreateFriend_ChosenPIN(t *testing.T) {
 	}
 }
 
-func TestAdminCreateFriend_InvalidInput(t *testing.T) {
+func TestAdminCreateGuest_InvalidInput(t *testing.T) {
 	client, base := adminClient(t)
-	cases := map[string]createFriendRequest{
+	cases := map[string]createGuestRequest{
 		"short pin":     {Name: "A", VehicleName: "v", PIN: "123"},
 		"non-digit pin": {Name: "A", VehicleName: "v", PIN: "12ab56"},
 		"long pin":      {Name: "A", VehicleName: "v", PIN: "1234567890123"},
 		"negative rate": {Name: "A", VehicleName: "v", RateSolarPerKWh: -1},
 	}
 	for name, req := range cases {
-		resp := mustPostJSON(t, client, base+"/admin/friends", req)
+		resp := mustPostJSON(t, client, base+"/admin/guests", req)
 		resp.Body.Close()
 		if resp.StatusCode != http.StatusBadRequest {
 			t.Errorf("%s: status = %d, want 400", name, resp.StatusCode)
@@ -82,11 +82,11 @@ func TestAdminCreateFriend_InvalidInput(t *testing.T) {
 	}
 }
 
-func TestAdminListFriends_HasLinkAndHidesPINHash(t *testing.T) {
+func TestAdminListGuests_HasLinkAndHidesPINHash(t *testing.T) {
 	client, base := adminClient(t)
-	id, _ := createFriendVia(t, client, base, createFriendRequest{Name: "Alex", VehicleName: "vehicle_1"})
+	id, _ := createGuestVia(t, client, base, createGuestRequest{Name: "Alex", VehicleName: "vehicle_1"})
 
-	resp, err := client.Get(base + "/admin/friends")
+	resp, err := client.Get(base + "/admin/guests")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -105,9 +105,9 @@ func TestAdminListFriends_HasLinkAndHidesPINHash(t *testing.T) {
 
 func TestAdminResetPIN_ChosenAndInvalid(t *testing.T) {
 	client, base := adminClient(t)
-	id, oldPIN := createFriendVia(t, client, base, createFriendRequest{Name: "Alex", VehicleName: "vehicle_1"})
+	id, oldPIN := createGuestVia(t, client, base, createGuestRequest{Name: "Alex", VehicleName: "vehicle_1"})
 
-	resp := doJSON(t, client, http.MethodPost, base+"/admin/friends/"+id+"/reset-pin", `{"pin":"7788"}`)
+	resp := doJSON(t, client, http.MethodPost, base+"/admin/guests/"+id+"/reset-pin", `{"pin":"7788"}`)
 	if resp.StatusCode != http.StatusOK {
 		t.Fatalf("reset with chosen PIN = %d, want 200", resp.StatusCode)
 	}
@@ -123,25 +123,25 @@ func TestAdminResetPIN_ChosenAndInvalid(t *testing.T) {
 		t.Errorf("login with old PIN = %d, want 401", got)
 	}
 
-	resp = doJSON(t, client, http.MethodPost, base+"/admin/friends/"+id+"/reset-pin", `{"pin":"x"}`)
+	resp = doJSON(t, client, http.MethodPost, base+"/admin/guests/"+id+"/reset-pin", `{"pin":"x"}`)
 	resp.Body.Close()
 	if resp.StatusCode != http.StatusBadRequest {
 		t.Errorf("invalid chosen PIN = %d, want 400", resp.StatusCode)
 	}
 
 	// No body at all still generates a random PIN.
-	resp = doJSON(t, client, http.MethodPost, base+"/admin/friends/"+id+"/reset-pin", "")
+	resp = doJSON(t, client, http.MethodPost, base+"/admin/guests/"+id+"/reset-pin", "")
 	if resp.StatusCode != http.StatusOK {
 		t.Errorf("reset without body = %d, want 200", resp.StatusCode)
 	}
 	resp.Body.Close()
 }
 
-func TestAdminDeleteFriend(t *testing.T) {
+func TestAdminDeleteGuest(t *testing.T) {
 	client, base := adminClient(t)
-	id, pin := createFriendVia(t, client, base, createFriendRequest{Name: "Alex", VehicleName: "vehicle_1"})
+	id, pin := createGuestVia(t, client, base, createGuestRequest{Name: "Alex", VehicleName: "vehicle_1"})
 
-	resp := doJSON(t, client, http.MethodDelete, base+"/admin/friends/"+id, "")
+	resp := doJSON(t, client, http.MethodDelete, base+"/admin/guests/"+id, "")
 	resp.Body.Close()
 	if resp.StatusCode != http.StatusNoContent {
 		t.Fatalf("delete status = %d, want 204", resp.StatusCode)
@@ -155,16 +155,16 @@ func TestAdminDeleteFriend(t *testing.T) {
 		t.Errorf("link status after delete = %d, want 404", status.StatusCode)
 	}
 
-	resp = doJSON(t, client, http.MethodDelete, base+"/admin/friends/"+id, "")
+	resp = doJSON(t, client, http.MethodDelete, base+"/admin/guests/"+id, "")
 	resp.Body.Close()
 	if resp.StatusCode != http.StatusNotFound {
 		t.Errorf("second delete = %d, want 404", resp.StatusCode)
 	}
 }
 
-func TestAdminDeleteFriend_RequiresAdmin(t *testing.T) {
+func TestAdminDeleteGuest_RequiresAdmin(t *testing.T) {
 	_, base := adminClient(t)
-	resp := doJSON(t, newClientWithJar(t), http.MethodDelete, base+"/admin/friends/whatever", "")
+	resp := doJSON(t, newClientWithJar(t), http.MethodDelete, base+"/admin/guests/whatever", "")
 	resp.Body.Close()
 	if resp.StatusCode != http.StatusUnauthorized {
 		t.Errorf("unauthenticated delete = %d, want 401", resp.StatusCode)
@@ -181,7 +181,7 @@ func TestAdminListVehicles_OnlyUnassignedFromSessions(t *testing.T) {
 		t.Fatalf("vehicles = %v, want [other_vehicle vehicle_1]", names)
 	}
 
-	createFriendVia(t, client, base, createFriendRequest{Name: "Alex", VehicleName: "vehicle_1"})
+	createGuestVia(t, client, base, createGuestRequest{Name: "Alex", VehicleName: "vehicle_1"})
 	resp = doJSON(t, client, http.MethodGet, base+"/admin/vehicles", "")
 	names = nil
 	mustDecode(t, resp, &names)

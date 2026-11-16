@@ -1,9 +1,9 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue'
-import { createFriend, listVehicles } from '../lib/api'
-import type { CreatedFriend } from '../lib/types'
+import { createGuest, listVehicles } from '../lib/api'
+import type { CreatedGuest } from '../lib/types'
 
-const emit = defineEmits<{ created: [friend: CreatedFriend] }>()
+const emit = defineEmits<{ created: [guest: CreatedGuest]; cancel: [] }>()
 
 const name = ref('')
 const vehicleName = ref('')
@@ -27,7 +27,7 @@ async function onSubmit() {
   error.value = ''
   submitting.value = true
   try {
-    const created = await createFriend({
+    const created = await createGuest({
       name: name.value,
       vehicleName: vehicleName.value,
       rateSolarPerKWh: rateSolarPerKWh.value,
@@ -51,30 +51,30 @@ async function onSubmit() {
   <form class="space-y-4" @submit.prevent="onSubmit">
     <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
       <div>
-        <label for="name" class="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">Name</label>
+        <label for="name" class="field-label">Name</label>
         <input
           id="name"
           v-model="name"
           required
-          class="w-full rounded-lg border border-gray-300 bg-white min-h-11 px-3 py-2 text-base focus:outline-none sm:min-h-0 sm:text-sm focus:ring-2 focus:ring-indigo-500 dark:border-gray-700 dark:bg-gray-950"
+          class="field"
         />
       </div>
       <div>
-        <label for="vehicleName" class="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">EVCC-Fahrzeugname</label>
+        <label for="vehicleName" class="field-label">EVCC-Fahrzeugname</label>
         <input
           id="vehicleName"
           v-model="vehicleName"
           list="vehicleSuggestions"
           required
           autocomplete="off"
-          class="w-full rounded-lg border border-gray-300 bg-white min-h-11 px-3 py-2 text-base focus:outline-none sm:min-h-0 sm:text-sm focus:ring-2 focus:ring-indigo-500 dark:border-gray-700 dark:bg-gray-950"
+          class="field"
         />
         <datalist id="vehicleSuggestions">
           <option v-for="v in vehicles" :key="v" :value="v" />
         </datalist>
       </div>
       <div>
-        <label for="rateSolar" class="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">Preis Sonne (EUR/kWh)</label>
+        <label for="rateSolar" class="field-label">Preis Sonne (EUR/kWh)</label>
         <input
           id="rateSolar"
           v-model.number="rateSolarPerKWh"
@@ -82,11 +82,11 @@ async function onSubmit() {
           step="0.01"
           min="0"
           required
-          class="w-full rounded-lg border border-gray-300 bg-white min-h-11 px-3 py-2 text-base focus:outline-none sm:min-h-0 sm:text-sm focus:ring-2 focus:ring-indigo-500 dark:border-gray-700 dark:bg-gray-950"
+          class="field"
         />
       </div>
       <div>
-        <label for="rateGrid" class="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">Preis Netz (EUR/kWh)</label>
+        <label for="rateGrid" class="field-label">Preis Netz (EUR/kWh)</label>
         <input
           id="rateGrid"
           v-model.number="rateGridPerKWh"
@@ -94,11 +94,11 @@ async function onSubmit() {
           step="0.01"
           min="0"
           required
-          class="w-full rounded-lg border border-gray-300 bg-white min-h-11 px-3 py-2 text-base focus:outline-none sm:min-h-0 sm:text-sm focus:ring-2 focus:ring-indigo-500 dark:border-gray-700 dark:bg-gray-950"
+          class="field"
         />
       </div>
       <div class="sm:col-span-2">
-        <label for="pin" class="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">PIN (optional)</label>
+        <label for="pin" class="field-label">PIN (optional)</label>
         <input
           id="pin"
           v-model="pin"
@@ -108,18 +108,15 @@ async function onSubmit() {
           autocomplete="off"
           placeholder="Leer lassen für eine zufällige 6-stellige PIN"
           title="4 bis 12 Ziffern"
-          class="w-full rounded-lg border border-gray-300 bg-white min-h-11 px-3 py-2 text-base focus:outline-none sm:min-h-0 sm:text-sm focus:ring-2 focus:ring-indigo-500 dark:border-gray-700 dark:bg-gray-950"
+          class="field"
         />
       </div>
     </div>
-    <button
-      type="submit"
-      :disabled="submitting"
-      class="rounded-lg bg-indigo-600 min-h-11 px-4 py-2 text-sm font-medium sm:min-h-0 text-white transition hover:bg-indigo-500 disabled:cursor-not-allowed disabled:opacity-50"
-    >
-      Freund anlegen
-    </button>
-    <p v-if="error" role="alert" class="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-600 dark:bg-red-950/40 dark:text-red-400">
+    <div class="flex flex-wrap gap-2">
+      <button type="submit" :disabled="submitting" class="btn-primary">Gast anlegen</button>
+      <button type="button" class="btn-outline" @click="emit('cancel')">Abbrechen</button>
+    </div>
+    <p v-if="error" role="alert" class="alert-error">
       {{ error }}
     </p>
   </form>

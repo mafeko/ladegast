@@ -1,16 +1,16 @@
 import { mount } from '@vue/test-utils'
 import { describe, expect, it, vi } from 'vitest'
-import AdminFriendForm from './AdminFriendForm.vue'
+import AdminGuestForm from './AdminGuestForm.vue'
 import * as api from '../lib/api'
 
 vi.mock('../lib/api')
 
-describe('AdminFriendForm', () => {
-  it('creates a friend and emits the result', async () => {
+describe('AdminGuestForm', () => {
+  it('creates a guest and emits the result', async () => {
     const created = { id: '1', pin: '123456', link: 'http://x/l/1' }
-    vi.mocked(api.createFriend).mockResolvedValue(created)
+    vi.mocked(api.createGuest).mockResolvedValue(created)
 
-    const wrapper = mount(AdminFriendForm)
+    const wrapper = mount(AdminGuestForm)
     await wrapper.find('#name').setValue('Alex')
     await wrapper.find('#vehicleName').setValue('vehicle_1')
     await wrapper.find('#rateSolar').setValue('0.1')
@@ -18,7 +18,7 @@ describe('AdminFriendForm', () => {
     await wrapper.find('form').trigger('submit.prevent')
     await flushMicrotasks()
 
-    expect(api.createFriend).toHaveBeenCalledWith({
+    expect(api.createGuest).toHaveBeenCalledWith({
       name: 'Alex',
       vehicleName: 'vehicle_1',
       rateSolarPerKWh: 0.1,
@@ -29,8 +29,8 @@ describe('AdminFriendForm', () => {
   })
 
   it('shows an error message on failure', async () => {
-    vi.mocked(api.createFriend).mockRejectedValue(new Error('name and vehicleName are required'))
-    const wrapper = mount(AdminFriendForm)
+    vi.mocked(api.createGuest).mockRejectedValue(new Error('name and vehicleName are required'))
+    const wrapper = mount(AdminGuestForm)
 
     await wrapper.find('form').trigger('submit.prevent')
     await flushMicrotasks()
@@ -38,8 +38,8 @@ describe('AdminFriendForm', () => {
     expect(wrapper.text()).toContain('name and vehicleName are required')
   })
   it('sends an optional chosen PIN', async () => {
-    vi.mocked(api.createFriend).mockResolvedValue({ id: '1', pin: '2468', link: 'http://x/l/1' })
-    const wrapper = mount(AdminFriendForm)
+    vi.mocked(api.createGuest).mockResolvedValue({ id: '1', pin: '2468', link: 'http://x/l/1' })
+    const wrapper = mount(AdminGuestForm)
 
     await wrapper.find('#name').setValue('Bea')
     await wrapper.find('#vehicleName').setValue('vehicle_2')
@@ -47,7 +47,7 @@ describe('AdminFriendForm', () => {
     await wrapper.find('form').trigger('submit.prevent')
     await new Promise((resolve) => setTimeout(resolve, 0))
 
-    expect(api.createFriend).toHaveBeenCalledWith(expect.objectContaining({ pin: '2468' }))
+    expect(api.createGuest).toHaveBeenCalledWith(expect.objectContaining({ pin: '2468' }))
   })
 })
 
@@ -55,10 +55,10 @@ async function flushMicrotasks() {
   await new Promise((resolve) => setTimeout(resolve, 0))
 }
 
-describe('AdminFriendForm vehicle suggestions', () => {
+describe('AdminGuestForm vehicle suggestions', () => {
   it('offers unassigned EVCC vehicles as suggestions', async () => {
     vi.mocked(api.listVehicles).mockResolvedValue(['vehicle_1', 'vehicle_2'])
-    const wrapper = mount(AdminFriendForm)
+    const wrapper = mount(AdminGuestForm)
     await new Promise((resolve) => setTimeout(resolve, 0))
 
     const options = wrapper.findAll('#vehicleSuggestions option').map((o) => o.attributes('value'))
@@ -67,7 +67,7 @@ describe('AdminFriendForm vehicle suggestions', () => {
 
   it('still works when loading suggestions fails', async () => {
     vi.mocked(api.listVehicles).mockRejectedValue(new Error('boom'))
-    const wrapper = mount(AdminFriendForm)
+    const wrapper = mount(AdminGuestForm)
     await new Promise((resolve) => setTimeout(resolve, 0))
 
     expect(wrapper.findAll('#vehicleSuggestions option')).toHaveLength(0)

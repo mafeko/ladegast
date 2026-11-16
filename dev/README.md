@@ -10,7 +10,7 @@ task evcc:mock:generate   # erzeugt evcc-mock.yaml neu (deterministisch, Seed 1)
 ```
 
 Ladegast anbinden: `LADEGAST_EVCC_BASE_URL=http://localhost:7070`,
-`LADEGAST_EVCC_API_KEY=evcc_mock_key`. Freunde mit den Fahrzeugnamen
+`LADEGAST_EVCC_API_KEY=evcc_mock_key`. Gäste mit den Fahrzeugnamen
 `vehicle_1` (Anna), `vehicle_2` (Ben), `vehicle_3` (Clara) anlegen.
 
 ## Endpunkte

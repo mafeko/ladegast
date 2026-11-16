@@ -74,13 +74,13 @@ func newClientWithJar(t *testing.T) *http.Client {
 	return &http.Client{Jar: jar}
 }
 
-func createFriendDirect(t *testing.T, st *store.Store, pin string) store.Friend {
+func createGuestDirect(t *testing.T, st *store.Store, pin string) store.Guest {
 	t.Helper()
 	hash, err := bcrypt.GenerateFromPassword([]byte(pin), bcrypt.DefaultCost)
 	if err != nil {
 		t.Fatalf("bcrypt: %v", err)
 	}
-	f := store.Friend{
+	f := store.Guest{
 		ID:              "11111111-1111-4111-8111-111111111111",
 		Name:            "Alex",
 		VehicleName:     "vehicle_1",
@@ -89,25 +89,25 @@ func createFriendDirect(t *testing.T, st *store.Store, pin string) store.Friend 
 		RateGridPerKWh:  0.35,
 		CreatedAt:       time.Now(),
 	}
-	if err := st.CreateFriend(f); err != nil {
-		t.Fatalf("CreateFriend: %v", err)
+	if err := st.CreateGuest(f); err != nil {
+		t.Fatalf("CreateGuest: %v", err)
 	}
 	return f
 }
 
-func TestFriendFlow(t *testing.T) {
+func TestGuestFlow(t *testing.T) {
 	evccSrv := fakeEVCC(t)
 	defer evccSrv.Close()
 
 	srv, st, _ := testServer(t, evccSrv.URL)
-	friend := createFriendDirect(t, st, "123456")
+	guest := createGuestDirect(t, st, "123456")
 
 	httpSrv := httptest.NewServer(srv.Handler())
 	defer httpSrv.Close()
 	client := newClientWithJar(t)
 
 	// Status before login.
-	resp, err := client.Get(httpSrv.URL + "/public/l/" + friend.ID + "/status")
+	resp, err := client.Get(httpSrv.URL + "/public/l/" + guest.ID + "/status")
 	if err != nil {
 		t.Fatalf("GET status: %v", err)
 	}
@@ -119,7 +119,7 @@ func TestFriendFlow(t *testing.T) {
 
 	// The bare link itself serves the embedded SPA shell, regardless of
 	// login state - the frontend router decides what to show.
-	resp, err = client.Get(httpSrv.URL + "/public/l/" + friend.ID)
+	resp, err = client.Get(httpSrv.URL + "/public/l/" + guest.ID)
 	if err != nil {
 		t.Fatalf("GET page: %v", err)
 	}
@@ -128,19 +128,19 @@ func TestFriendFlow(t *testing.T) {
 	}
 
 	// Wrong PIN.
-	resp = mustPostJSON(t, client, httpSrv.URL+"/public/l/"+friend.ID+"/login", map[string]string{"pin": "000000"})
+	resp = mustPostJSON(t, client, httpSrv.URL+"/public/l/"+guest.ID+"/login", map[string]string{"pin": "000000"})
 	if resp.StatusCode != http.StatusUnauthorized {
 		t.Fatalf("wrong PIN status = %d, want 401", resp.StatusCode)
 	}
 
 	// Correct PIN.
-	resp = mustPostJSON(t, client, httpSrv.URL+"/public/l/"+friend.ID+"/login", map[string]string{"pin": "123456"})
+	resp = mustPostJSON(t, client, httpSrv.URL+"/public/l/"+guest.ID+"/login", map[string]string{"pin": "123456"})
 	if resp.StatusCode != http.StatusOK {
 		t.Fatalf("correct PIN status = %d, want 200", resp.StatusCode)
 	}
 
-	// Dashboard only contains this friend's vehicle (10 kWh @ 50% solar).
-	resp, err = client.Get(httpSrv.URL + "/public/l/" + friend.ID + "/dashboard")
+	// Dashboard only contains this guest's vehicle (10 kWh @ 50% solar).
+	resp, err = client.Get(httpSrv.URL + "/public/l/" + guest.ID + "/dashboard")
 	if err != nil {
 		t.Fatalf("GET dashboard: %v", err)
 	}
@@ -158,7 +158,7 @@ func TestFriendFlow(t *testing.T) {
 	}
 
 	// Sessions list.
-	resp, err = client.Get(httpSrv.URL + "/public/l/" + friend.ID + "/sessions")
+	resp, err = client.Get(httpSrv.URL + "/public/l/" + guest.ID + "/sessions")
 	if err != nil {
 		t.Fatalf("GET sessions: %v", err)
 	}
@@ -169,24 +169,24 @@ func TestFriendFlow(t *testing.T) {
 	}
 
 	// Mode switch.
-	resp = mustPostJSON(t, client, httpSrv.URL+"/public/l/"+friend.ID+"/mode", map[string]string{"mode": "smart"})
+	resp = mustPostJSON(t, client, httpSrv.URL+"/public/l/"+guest.ID+"/mode", map[string]string{"mode": "smart"})
 	if resp.StatusCode != http.StatusOK {
 		t.Fatalf("mode switch status = %d, want 200", resp.StatusCode)
 	}
 
 	// Invalid mode rejected.
-	resp = mustPostJSON(t, client, httpSrv.URL+"/public/l/"+friend.ID+"/mode", map[string]string{"mode": "off"})
+	resp = mustPostJSON(t, client, httpSrv.URL+"/public/l/"+guest.ID+"/mode", map[string]string{"mode": "off"})
 	if resp.StatusCode != http.StatusBadRequest {
 		t.Fatalf("mode=off status = %d, want 400", resp.StatusCode)
 	}
 }
 
-func TestFriendLogin_RateLimited(t *testing.T) {
+func TestGuestLogin_RateLimited(t *testing.T) {
 	evccSrv := fakeEVCC(t)
 	defer evccSrv.Close()
 
 	srv, st, _ := testServer(t, evccSrv.URL)
-	friend := createFriendDirect(t, st, "123456")
+	guest := createGuestDirect(t, st, "123456")
 
 	httpSrv := httptest.NewServer(srv.Handler())
 	defer httpSrv.Close()
@@ -194,13 +194,13 @@ func TestFriendLogin_RateLimited(t *testing.T) {
 
 	var last *http.Response
 	for i := 0; i < 3; i++ {
-		last = mustPostJSON(t, client, httpSrv.URL+"/public/l/"+friend.ID+"/login", map[string]string{"pin": "000000"})
+		last = mustPostJSON(t, client, httpSrv.URL+"/public/l/"+guest.ID+"/login", map[string]string{"pin": "000000"})
 	}
 	if last.StatusCode != http.StatusUnauthorized {
 		t.Fatalf("3rd wrong attempt status = %d, want 401", last.StatusCode)
 	}
 
-	locked := mustPostJSON(t, client, httpSrv.URL+"/public/l/"+friend.ID+"/login", map[string]string{"pin": "123456"})
+	locked := mustPostJSON(t, client, httpSrv.URL+"/public/l/"+guest.ID+"/login", map[string]string{"pin": "123456"})
 	if locked.StatusCode != http.StatusTooManyRequests {
 		t.Fatalf("4th attempt (correct PIN) status = %d, want 429", locked.StatusCode)
 	}
@@ -231,11 +231,11 @@ func TestAdminFlow(t *testing.T) {
 		t.Fatalf("admin login status = %d, want 200", resp.StatusCode)
 	}
 
-	resp = mustPostJSON(t, client, httpSrv.URL+"/admin/friends", createFriendRequest{
+	resp = mustPostJSON(t, client, httpSrv.URL+"/admin/guests", createGuestRequest{
 		Name: "Alex", VehicleName: "vehicle_1", RateSolarPerKWh: 0.10, RateGridPerKWh: 0.35,
 	})
 	if resp.StatusCode != http.StatusCreated {
-		t.Fatalf("create friend status = %d, want 201", resp.StatusCode)
+		t.Fatalf("create guest status = %d, want 201", resp.StatusCode)
 	}
 	var created struct{ ID, PIN, Link string }
 	mustDecode(t, resp, &created)
@@ -243,17 +243,17 @@ func TestAdminFlow(t *testing.T) {
 		t.Fatalf("created = %+v, missing id/pin", created)
 	}
 
-	resp, err := client.Get(httpSrv.URL + "/admin/friends")
+	resp, err := client.Get(httpSrv.URL + "/admin/guests")
 	if err != nil {
-		t.Fatalf("GET friends: %v", err)
+		t.Fatalf("GET guests: %v", err)
 	}
-	var friends []store.Friend
-	mustDecode(t, resp, &friends)
-	if len(friends) != 1 {
-		t.Fatalf("len(friends) = %d, want 1", len(friends))
+	var guests []store.Guest
+	mustDecode(t, resp, &guests)
+	if len(guests) != 1 {
+		t.Fatalf("len(guests) = %d, want 1", len(guests))
 	}
 
-	resp, err = client.Get(httpSrv.URL + "/admin/friends/" + created.ID + "/view-as/dashboard")
+	resp, err = client.Get(httpSrv.URL + "/admin/guests/" + created.ID + "/view-as/dashboard")
 	if err != nil {
 		t.Fatalf("GET view-as dashboard: %v", err)
 	}
@@ -262,7 +262,7 @@ func TestAdminFlow(t *testing.T) {
 	}
 
 	// Regenerate link: old id gone, new id works.
-	resp = mustPostJSON(t, client, httpSrv.URL+"/admin/friends/"+created.ID+"/regenerate-link", nil)
+	resp = mustPostJSON(t, client, httpSrv.URL+"/admin/guests/"+created.ID+"/regenerate-link", nil)
 	if resp.StatusCode != http.StatusOK {
 		t.Fatalf("regenerate-link status = %d, want 200", resp.StatusCode)
 	}
@@ -278,13 +278,13 @@ func TestAdminFlow(t *testing.T) {
 	}
 
 	// Reset PIN.
-	resp = mustPostJSON(t, client, httpSrv.URL+"/admin/friends/"+regenerated.ID+"/reset-pin", nil)
+	resp = mustPostJSON(t, client, httpSrv.URL+"/admin/guests/"+regenerated.ID+"/reset-pin", nil)
 	if resp.StatusCode != http.StatusOK {
 		t.Fatalf("reset-pin status = %d, want 200", resp.StatusCode)
 	}
 }
 
-func TestFriendLogin_UnknownUUID(t *testing.T) {
+func TestGuestLogin_UnknownUUID(t *testing.T) {
 	evccSrv := fakeEVCC(t)
 	defer evccSrv.Close()
 
@@ -299,16 +299,16 @@ func TestFriendLogin_UnknownUUID(t *testing.T) {
 	}
 }
 
-func TestFriendLogin_InvalidBody(t *testing.T) {
+func TestGuestLogin_InvalidBody(t *testing.T) {
 	evccSrv := fakeEVCC(t)
 	defer evccSrv.Close()
 
 	srv, st, _ := testServer(t, evccSrv.URL)
-	friend := createFriendDirect(t, st, "123456")
+	guest := createGuestDirect(t, st, "123456")
 	httpSrv := httptest.NewServer(srv.Handler())
 	defer httpSrv.Close()
 
-	resp, err := http.Post(httpSrv.URL+"/public/l/"+friend.ID+"/login", "application/json", strings.NewReader("not json"))
+	resp, err := http.Post(httpSrv.URL+"/public/l/"+guest.ID+"/login", "application/json", strings.NewReader("not json"))
 	if err != nil {
 		t.Fatalf("POST: %v", err)
 	}
@@ -317,24 +317,24 @@ func TestFriendLogin_InvalidBody(t *testing.T) {
 	}
 }
 
-func TestFriendLogout(t *testing.T) {
+func TestGuestLogout(t *testing.T) {
 	evccSrv := fakeEVCC(t)
 	defer evccSrv.Close()
 
 	srv, st, _ := testServer(t, evccSrv.URL)
-	friend := createFriendDirect(t, st, "123456")
+	guest := createGuestDirect(t, st, "123456")
 	httpSrv := httptest.NewServer(srv.Handler())
 	defer httpSrv.Close()
 	client := newClientWithJar(t)
 
-	mustPostJSON(t, client, httpSrv.URL+"/public/l/"+friend.ID+"/login", map[string]string{"pin": "123456"})
+	mustPostJSON(t, client, httpSrv.URL+"/public/l/"+guest.ID+"/login", map[string]string{"pin": "123456"})
 
-	resp := mustPostJSON(t, client, httpSrv.URL+"/public/l/"+friend.ID+"/logout", nil)
+	resp := mustPostJSON(t, client, httpSrv.URL+"/public/l/"+guest.ID+"/logout", nil)
 	if resp.StatusCode != http.StatusOK {
 		t.Fatalf("logout status = %d, want 200", resp.StatusCode)
 	}
 
-	resp, err := client.Get(httpSrv.URL + "/public/l/" + friend.ID + "/dashboard")
+	resp, err := client.Get(httpSrv.URL + "/public/l/" + guest.ID + "/dashboard")
 	if err != nil {
 		t.Fatalf("GET dashboard after logout: %v", err)
 	}
@@ -343,71 +343,71 @@ func TestFriendLogout(t *testing.T) {
 	}
 }
 
-func TestRequireFriend_CookieForDifferentFriend(t *testing.T) {
+func TestRequireGuest_CookieForDifferentGuest(t *testing.T) {
 	evccSrv := fakeEVCC(t)
 	defer evccSrv.Close()
 
 	srv, st, _ := testServer(t, evccSrv.URL)
-	friendA := createFriendDirect(t, st, "111111")
-	friendB := store.Friend{ID: "22222222-2222-4222-8222-222222222222", Name: "Bea", VehicleName: "vehicle_2"}
+	guestA := createGuestDirect(t, st, "111111")
+	guestB := store.Guest{ID: "22222222-2222-4222-8222-222222222222", Name: "Bea", VehicleName: "vehicle_2"}
 	hash, _ := bcrypt.GenerateFromPassword([]byte("222222"), bcrypt.DefaultCost)
-	friendB.PINHash = string(hash)
-	if err := st.CreateFriend(friendB); err != nil {
-		t.Fatalf("CreateFriend: %v", err)
+	guestB.PINHash = string(hash)
+	if err := st.CreateGuest(guestB); err != nil {
+		t.Fatalf("CreateGuest: %v", err)
 	}
 
 	httpSrv := httptest.NewServer(srv.Handler())
 	defer httpSrv.Close()
 	client := newClientWithJar(t)
 
-	// Log in as friendA, then try to use that cookie against friendB's path.
-	mustPostJSON(t, client, httpSrv.URL+"/public/l/"+friendA.ID+"/login", map[string]string{"pin": "111111"})
-	resp, err := client.Get(httpSrv.URL + "/public/l/" + friendB.ID + "/dashboard")
+	// Log in as guestA, then try to use that cookie against guestB's path.
+	mustPostJSON(t, client, httpSrv.URL+"/public/l/"+guestA.ID+"/login", map[string]string{"pin": "111111"})
+	resp, err := client.Get(httpSrv.URL + "/public/l/" + guestB.ID + "/dashboard")
 	if err != nil {
 		t.Fatalf("GET dashboard: %v", err)
 	}
 	if resp.StatusCode != http.StatusUnauthorized {
-		t.Fatalf("cross-friend dashboard access status = %d, want 401", resp.StatusCode)
+		t.Fatalf("cross-guest dashboard access status = %d, want 401", resp.StatusCode)
 	}
 }
 
-func TestRequireFriend_DeletedFriendStillHasValidCookie(t *testing.T) {
+func TestRequireGuest_DeletedGuestStillHasValidCookie(t *testing.T) {
 	evccSrv := fakeEVCC(t)
 	defer evccSrv.Close()
 
 	srv, st, _ := testServer(t, evccSrv.URL)
-	friend := createFriendDirect(t, st, "123456")
+	guest := createGuestDirect(t, st, "123456")
 	httpSrv := httptest.NewServer(srv.Handler())
 	defer httpSrv.Close()
 	client := newClientWithJar(t)
 
-	mustPostJSON(t, client, httpSrv.URL+"/public/l/"+friend.ID+"/login", map[string]string{"pin": "123456"})
-	if err := st.DeleteFriend(friend.ID); err != nil {
-		t.Fatalf("DeleteFriend: %v", err)
+	mustPostJSON(t, client, httpSrv.URL+"/public/l/"+guest.ID+"/login", map[string]string{"pin": "123456"})
+	if err := st.DeleteGuest(guest.ID); err != nil {
+		t.Fatalf("DeleteGuest: %v", err)
 	}
 
-	resp, err := client.Get(httpSrv.URL + "/public/l/" + friend.ID + "/dashboard")
+	resp, err := client.Get(httpSrv.URL + "/public/l/" + guest.ID + "/dashboard")
 	if err != nil {
 		t.Fatalf("GET dashboard: %v", err)
 	}
 	if resp.StatusCode != http.StatusUnauthorized {
-		t.Fatalf("dashboard for deleted friend status = %d, want 401", resp.StatusCode)
+		t.Fatalf("dashboard for deleted guest status = %d, want 401", resp.StatusCode)
 	}
 }
 
-func TestFriendHandlers_EVCCUnreachable(t *testing.T) {
+func TestGuestHandlers_EVCCUnreachable(t *testing.T) {
 	deadSrv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {}))
 	deadSrv.Close() // closed before use: connections will be refused
 
 	srv, st, _ := testServer(t, deadSrv.URL)
-	friend := createFriendDirect(t, st, "123456")
+	guest := createGuestDirect(t, st, "123456")
 	httpSrv := httptest.NewServer(srv.Handler())
 	defer httpSrv.Close()
 	client := newClientWithJar(t)
 
-	mustPostJSON(t, client, httpSrv.URL+"/public/l/"+friend.ID+"/login", map[string]string{"pin": "123456"})
+	mustPostJSON(t, client, httpSrv.URL+"/public/l/"+guest.ID+"/login", map[string]string{"pin": "123456"})
 
-	resp, err := client.Get(httpSrv.URL + "/public/l/" + friend.ID + "/dashboard")
+	resp, err := client.Get(httpSrv.URL + "/public/l/" + guest.ID + "/dashboard")
 	if err != nil {
 		t.Fatalf("GET dashboard: %v", err)
 	}
@@ -415,7 +415,7 @@ func TestFriendHandlers_EVCCUnreachable(t *testing.T) {
 		t.Errorf("dashboard with EVCC down status = %d, want 502", resp.StatusCode)
 	}
 
-	resp, err = client.Get(httpSrv.URL + "/public/l/" + friend.ID + "/sessions")
+	resp, err = client.Get(httpSrv.URL + "/public/l/" + guest.ID + "/sessions")
 	if err != nil {
 		t.Fatalf("GET sessions: %v", err)
 	}
@@ -423,13 +423,13 @@ func TestFriendHandlers_EVCCUnreachable(t *testing.T) {
 		t.Errorf("sessions with EVCC down status = %d, want 502", resp.StatusCode)
 	}
 
-	resp = mustPostJSON(t, client, httpSrv.URL+"/public/l/"+friend.ID+"/mode", map[string]string{"mode": "smart"})
+	resp = mustPostJSON(t, client, httpSrv.URL+"/public/l/"+guest.ID+"/mode", map[string]string{"mode": "smart"})
 	if resp.StatusCode != http.StatusBadGateway {
 		t.Errorf("mode switch with EVCC down status = %d, want 502", resp.StatusCode)
 	}
 }
 
-func TestAdminUpdateFriend(t *testing.T) {
+func TestAdminUpdateGuest(t *testing.T) {
 	evccSrv := fakeEVCC(t)
 	defer evccSrv.Close()
 
@@ -438,37 +438,37 @@ func TestAdminUpdateFriend(t *testing.T) {
 	if err := EnsureAdminBootstrap(st, cfg); err != nil {
 		t.Fatalf("EnsureAdminBootstrap: %v", err)
 	}
-	friend := createFriendDirect(t, st, "123456")
+	guest := createGuestDirect(t, st, "123456")
 
 	httpSrv := httptest.NewServer(srv.Handler())
 	defer httpSrv.Close()
 	client := newClientWithJar(t)
 	mustPostJSON(t, client, httpSrv.URL+"/admin/login", map[string]string{"username": "admin", "password": "s3cret-password"})
 
-	req, _ := http.NewRequest(http.MethodPut, httpSrv.URL+"/admin/friends/"+friend.ID, strings.NewReader(`{"name":"Alexandra","vehicleName":"vehicle_1","rateSolarPerKWh":0.2,"rateGridPerKWh":0.4}`))
+	req, _ := http.NewRequest(http.MethodPut, httpSrv.URL+"/admin/guests/"+guest.ID, strings.NewReader(`{"name":"Alexandra","vehicleName":"vehicle_1","rateSolarPerKWh":0.2,"rateGridPerKWh":0.4}`))
 	req.Header.Set("Content-Type", "application/json")
 	resp, err := client.Do(req)
 	if err != nil {
-		t.Fatalf("PUT friend: %v", err)
+		t.Fatalf("PUT guest: %v", err)
 	}
 	if resp.StatusCode != http.StatusOK {
-		t.Fatalf("update friend status = %d, want 200", resp.StatusCode)
+		t.Fatalf("update guest status = %d, want 200", resp.StatusCode)
 	}
-	var updated store.Friend
+	var updated store.Guest
 	mustDecode(t, resp, &updated)
 	if updated.Name != "Alexandra" || updated.RateSolarPerKWh != 0.2 {
 		t.Errorf("updated = %+v, want Name=Alexandra RateSolarPerKWh=0.2", updated)
 	}
 
-	// Unknown friend id.
-	req2, _ := http.NewRequest(http.MethodPut, httpSrv.URL+"/admin/friends/does-not-exist", strings.NewReader(`{"name":"X","vehicleName":"Y"}`))
+	// Unknown guest id.
+	req2, _ := http.NewRequest(http.MethodPut, httpSrv.URL+"/admin/guests/does-not-exist", strings.NewReader(`{"name":"X","vehicleName":"Y"}`))
 	req2.Header.Set("Content-Type", "application/json")
 	resp2, err := client.Do(req2)
 	if err != nil {
-		t.Fatalf("PUT unknown friend: %v", err)
+		t.Fatalf("PUT unknown guest: %v", err)
 	}
 	if resp2.StatusCode != http.StatusNotFound {
-		t.Fatalf("update unknown friend status = %d, want 404", resp2.StatusCode)
+		t.Fatalf("update unknown guest status = %d, want 404", resp2.StatusCode)
 	}
 }
 
@@ -481,14 +481,14 @@ func TestAdminViewAsSessions(t *testing.T) {
 	if err := EnsureAdminBootstrap(st, cfg); err != nil {
 		t.Fatalf("EnsureAdminBootstrap: %v", err)
 	}
-	friend := createFriendDirect(t, st, "123456")
+	guest := createGuestDirect(t, st, "123456")
 
 	httpSrv := httptest.NewServer(srv.Handler())
 	defer httpSrv.Close()
 	client := newClientWithJar(t)
 	mustPostJSON(t, client, httpSrv.URL+"/admin/login", map[string]string{"username": "admin", "password": "s3cret-password"})
 
-	resp, err := client.Get(httpSrv.URL + "/admin/friends/" + friend.ID + "/view-as/sessions")
+	resp, err := client.Get(httpSrv.URL + "/admin/guests/" + guest.ID + "/view-as/sessions")
 	if err != nil {
 		t.Fatalf("GET view-as sessions: %v", err)
 	}
@@ -501,7 +501,7 @@ func TestAdminViewAsSessions(t *testing.T) {
 		t.Fatalf("len(sessions) = %d, want 1", len(sessions))
 	}
 
-	resp, err = client.Get(httpSrv.URL + "/admin/friends/does-not-exist/view-as/sessions")
+	resp, err = client.Get(httpSrv.URL + "/admin/guests/does-not-exist/view-as/sessions")
 	if err != nil {
 		t.Fatalf("GET view-as sessions (unknown): %v", err)
 	}
@@ -529,12 +529,12 @@ func TestAdminLogout(t *testing.T) {
 		t.Fatalf("logout status = %d, want 200", resp.StatusCode)
 	}
 
-	resp, err := client.Get(httpSrv.URL + "/admin/friends")
+	resp, err := client.Get(httpSrv.URL + "/admin/guests")
 	if err != nil {
-		t.Fatalf("GET friends after logout: %v", err)
+		t.Fatalf("GET guests after logout: %v", err)
 	}
 	if resp.StatusCode != http.StatusUnauthorized {
-		t.Fatalf("friends after logout status = %d, want 401", resp.StatusCode)
+		t.Fatalf("guests after logout status = %d, want 401", resp.StatusCode)
 	}
 }
 
@@ -553,11 +553,11 @@ func TestRequireAdmin_ValidTokenForNonexistentAdmin(t *testing.T) {
 	if err != nil {
 		t.Fatalf("authtoken.New: %v", err)
 	}
-	req, _ := http.NewRequest(http.MethodGet, httpSrv.URL+"/admin/friends", nil)
+	req, _ := http.NewRequest(http.MethodGet, httpSrv.URL+"/admin/guests", nil)
 	req.AddCookie(&http.Cookie{Name: adminCookieName, Value: token})
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
-		t.Fatalf("GET friends: %v", err)
+		t.Fatalf("GET guests: %v", err)
 	}
 	if resp.StatusCode != http.StatusUnauthorized {
 		t.Fatalf("status = %d, want 401", resp.StatusCode)

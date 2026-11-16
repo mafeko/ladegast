@@ -10,9 +10,9 @@ async function flushMicrotasks() {
 }
 
 describe('AdminViewAsPage', () => {
-  it('loads and renders the dashboard for the given friend id', async () => {
+  it('loads and renders the dashboard for the given guest id', async () => {
     vi.mocked(api.viewAsDashboard).mockResolvedValue({
-      friend: { id: '1', name: 'Alex', rateSolarPerKWh: 0.1, rateGridPerKWh: 0.3 },
+      guest: { id: '1', name: 'Alex', rateSolarPerKWh: 0.1, rateGridPerKWh: 0.3 },
       today: { chargedKWh: 1, solarKWh: 1, gridKWh: 0, costEUR: 0.1 },
       thisWeek: { chargedKWh: 1, solarKWh: 1, gridKWh: 0, costEUR: 0.1 },
       thisMonth: { chargedKWh: 1, solarKWh: 1, gridKWh: 0, costEUR: 0.1 },
@@ -31,7 +31,7 @@ describe('AdminViewAsPage', () => {
   })
 
   it('shows an error message when loading fails', async () => {
-    vi.mocked(api.viewAsDashboard).mockRejectedValue(new Error('friend not found'))
+    vi.mocked(api.viewAsDashboard).mockRejectedValue(new Error('guest not found'))
     vi.mocked(api.viewAsSessions).mockResolvedValue([])
 
     const wrapper = mount(AdminViewAsPage, {
@@ -40,6 +40,6 @@ describe('AdminViewAsPage', () => {
     })
     await flushMicrotasks()
 
-    expect(wrapper.text()).toContain('friend not found')
+    expect(wrapper.text()).toContain('guest not found')
   })
 })

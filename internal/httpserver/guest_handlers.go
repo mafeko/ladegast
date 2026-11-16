@@ -13,45 +13,45 @@ import (
 )
 
 func (s *Server) registerPublicRoutes(mux *http.ServeMux) {
-	mux.HandleFunc("GET "+s.publicPath("/l/{uuid}/status"), s.handleFriendStatus)
-	mux.HandleFunc("POST "+s.publicPath("/l/{uuid}/login"), s.handleFriendLogin)
-	mux.HandleFunc("POST "+s.publicPath("/l/{uuid}/logout"), s.requireFriend(s.handleFriendLogout))
-	mux.HandleFunc("GET "+s.publicPath("/l/{uuid}/dashboard"), s.requireFriend(s.handleFriendDashboard))
-	mux.HandleFunc("GET "+s.publicPath("/l/{uuid}/sessions"), s.requireFriend(s.handleFriendSessions))
-	mux.HandleFunc("GET "+s.publicPath("/l/{uuid}/settlements"), s.requireFriend(s.handleFriendSettlements))
-	mux.HandleFunc("POST "+s.publicPath("/l/{uuid}/mode"), s.requireFriend(s.handleFriendSetMode))
+	mux.HandleFunc("GET "+s.publicPath("/l/{uuid}/status"), s.handleGuestStatus)
+	mux.HandleFunc("POST "+s.publicPath("/l/{uuid}/login"), s.handleGuestLogin)
+	mux.HandleFunc("POST "+s.publicPath("/l/{uuid}/logout"), s.requireGuest(s.handleGuestLogout))
+	mux.HandleFunc("GET "+s.publicPath("/l/{uuid}/dashboard"), s.requireGuest(s.handleGuestDashboard))
+	mux.HandleFunc("GET "+s.publicPath("/l/{uuid}/sessions"), s.requireGuest(s.handleGuestSessions))
+	mux.HandleFunc("GET "+s.publicPath("/l/{uuid}/settlements"), s.requireGuest(s.handleGuestSettlements))
+	mux.HandleFunc("POST "+s.publicPath("/l/{uuid}/mode"), s.requireGuest(s.handleGuestSetMode))
 }
 
-// requireFriend wraps a handler so it only runs when the friend session
+// requireGuest wraps a handler so it only runs when the guest session
 // cookie's subject matches the {uuid} in the request path.
-func (s *Server) requireFriend(next func(http.ResponseWriter, *http.Request, store.Friend)) http.HandlerFunc {
+func (s *Server) requireGuest(next func(http.ResponseWriter, *http.Request, store.Guest)) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		uuid := r.PathValue("uuid")
-		subject := s.sessionSubject(r, friendCookieName)
+		subject := s.sessionSubject(r, guestCookieName)
 		if subject == "" || subject != uuid {
 			writeError(w, http.StatusUnauthorized, "not authenticated")
 			return
 		}
-		friend, err := s.store.GetFriend(uuid)
+		guest, err := s.store.GetGuest(uuid)
 		if err != nil {
 			writeError(w, http.StatusUnauthorized, "not authenticated")
 			return
 		}
-		next(w, r, friend)
+		next(w, r, guest)
 	}
 }
 
-func (s *Server) handleFriendStatus(w http.ResponseWriter, r *http.Request) {
+func (s *Server) handleGuestStatus(w http.ResponseWriter, r *http.Request) {
 	uuid := r.PathValue("uuid")
-	if _, err := s.store.GetFriend(uuid); err != nil {
+	if _, err := s.store.GetGuest(uuid); err != nil {
 		writeError(w, http.StatusNotFound, "unknown link")
 		return
 	}
-	authenticated := s.sessionSubject(r, friendCookieName) == uuid
+	authenticated := s.sessionSubject(r, guestCookieName) == uuid
 	writeJSON(w, http.StatusOK, map[string]bool{"authenticated": authenticated})
 }
 
-func (s *Server) handleFriendLogin(w http.ResponseWriter, r *http.Request) {
+func (s *Server) handleGuestLogin(w http.ResponseWriter, r *http.Request) {
 	uuid := r.PathValue("uuid")
 	var body struct {
 		PIN string `json:"pin"`
@@ -72,28 +72,28 @@ func (s *Server) handleFriendLogin(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	friend, err := s.store.GetFriend(uuid)
-	if err != nil || bcrypt.CompareHashAndPassword([]byte(friend.PINHash), []byte(body.PIN)) != nil {
+	guest, err := s.store.GetGuest(uuid)
+	if err != nil || bcrypt.CompareHashAndPassword([]byte(guest.PINHash), []byte(body.PIN)) != nil {
 		_ = s.store.RecordFailedAttempt(rateLimitKey, now, s.cfg.RateLimitWindow)
 		writeError(w, http.StatusUnauthorized, "invalid PIN")
 		return
 	}
 
 	_ = s.store.ResetAttempts(rateLimitKey)
-	if err := s.setSessionCookie(w, friendCookieName, friend.ID); err != nil {
+	if err := s.setSessionCookie(w, guestCookieName, guest.ID); err != nil {
 		writeError(w, http.StatusInternalServerError, "internal error")
 		return
 	}
-	writeJSON(w, http.StatusOK, map[string]string{"name": friend.Name})
+	writeJSON(w, http.StatusOK, map[string]string{"name": guest.Name})
 }
 
-func (s *Server) handleFriendLogout(w http.ResponseWriter, r *http.Request, _ store.Friend) {
-	s.clearSessionCookie(w, friendCookieName)
+func (s *Server) handleGuestLogout(w http.ResponseWriter, r *http.Request, _ store.Guest) {
+	s.clearSessionCookie(w, guestCookieName)
 	writeJSON(w, http.StatusOK, map[string]bool{"ok": true})
 }
 
-func (s *Server) handleFriendDashboard(w http.ResponseWriter, r *http.Request, friend store.Friend) {
-	summary, err := s.dashboardSummary(r, friend)
+func (s *Server) handleGuestDashboard(w http.ResponseWriter, r *http.Request, guest store.Guest) {
+	summary, err := s.dashboardSummary(r, guest)
 	if err != nil {
 		writeError(w, http.StatusBadGateway, "could not reach EVCC")
 		return
@@ -102,27 +102,27 @@ func (s *Server) handleFriendDashboard(w http.ResponseWriter, r *http.Request, f
 }
 
 type dashboard struct {
-	Friend    friendInfo   `json:"friend"`
+	Guest     guestInfo    `json:"guest"`
 	Today     evcc.Summary `json:"today"`
 	ThisWeek  evcc.Summary `json:"thisWeek"`
 	ThisMonth evcc.Summary `json:"thisMonth"`
 	ThisYear  evcc.Summary `json:"thisYear"`
 }
 
-type friendInfo struct {
+type guestInfo struct {
 	ID              string  `json:"id"`
 	Name            string  `json:"name"`
 	RateSolarPerKWh float64 `json:"rateSolarPerKWh"`
 	RateGridPerKWh  float64 `json:"rateGridPerKWh"`
 }
 
-func (s *Server) dashboardSummary(r *http.Request, friend store.Friend) (dashboard, error) {
+func (s *Server) dashboardSummary(r *http.Request, guest store.Guest) (dashboard, error) {
 	now := time.Now()
 	sessions, err := s.evcc.Sessions(r.Context(), now.Year(), 0)
 	if err != nil {
 		return dashboard{}, err
 	}
-	own := evcc.FilterByVehicle(sessions, friend.VehicleName)
+	own := evcc.FilterByVehicle(sessions, guest.VehicleName)
 
 	summarize := func(from time.Time) evcc.Summary {
 		var in []evcc.Session
@@ -131,11 +131,11 @@ func (s *Server) dashboardSummary(r *http.Request, friend store.Friend) (dashboa
 				in = append(in, sess)
 			}
 		}
-		return evcc.Summarize(in, friend.RateSolarPerKWh, friend.RateGridPerKWh)
+		return evcc.Summarize(in, guest.RateSolarPerKWh, guest.RateGridPerKWh)
 	}
 
 	return dashboard{
-		Friend:    friendInfo{ID: friend.ID, Name: friend.Name, RateSolarPerKWh: friend.RateSolarPerKWh, RateGridPerKWh: friend.RateGridPerKWh},
+		Guest:     guestInfo{ID: guest.ID, Name: guest.Name, RateSolarPerKWh: guest.RateSolarPerKWh, RateGridPerKWh: guest.RateGridPerKWh},
 		Today:     summarize(startOfDay(now)),
 		ThisWeek:  summarize(startOfWeek(now)),
 		ThisMonth: summarize(startOfMonth(now)),
@@ -143,16 +143,16 @@ func (s *Server) dashboardSummary(r *http.Request, friend store.Friend) (dashboa
 	}, nil
 }
 
-// handleFriendSessions returns the friend's complete charging history. The
+// handleGuestSessions returns the guest's complete charging history. The
 // frontend caches it and filters by time range client-side, so the range
 // picker never triggers another EVCC call.
-func (s *Server) handleFriendSessions(w http.ResponseWriter, r *http.Request, friend store.Friend) {
+func (s *Server) handleGuestSessions(w http.ResponseWriter, r *http.Request, guest store.Guest) {
 	sessions, err := s.evcc.Sessions(r.Context(), 0, 0)
 	if err != nil {
 		writeError(w, http.StatusBadGateway, "could not reach EVCC")
 		return
 	}
-	own := evcc.FilterByVehicle(sessions, friend.VehicleName)
+	own := evcc.FilterByVehicle(sessions, guest.VehicleName)
 	sort.Slice(own, func(i, j int) bool { return own[i].Created.After(own[j].Created) })
 
 	type sessionView struct {
@@ -172,13 +172,13 @@ func (s *Server) handleFriendSessions(w http.ResponseWriter, r *http.Request, fr
 			ChargedKWh: sess.ChargedEnergy,
 			SolarKWh:   solar,
 			GridKWh:    grid,
-			CostEUR:    solar*friend.RateSolarPerKWh + grid*friend.RateGridPerKWh,
+			CostEUR:    solar*guest.RateSolarPerKWh + grid*guest.RateGridPerKWh,
 		})
 	}
 	writeJSON(w, http.StatusOK, views)
 }
 
-func (s *Server) handleFriendSetMode(w http.ResponseWriter, r *http.Request, friend store.Friend) {
+func (s *Server) handleGuestSetMode(w http.ResponseWriter, r *http.Request, guest store.Guest) {
 	var body struct {
 		Mode string `json:"mode"`
 	}
@@ -190,7 +190,7 @@ func (s *Server) handleFriendSetMode(w http.ResponseWriter, r *http.Request, fri
 		writeError(w, http.StatusBadRequest, "mode must be smart or now")
 		return
 	}
-	if err := s.evcc.SetVehicleMode(r.Context(), friend.VehicleName, mode); err != nil {
+	if err := s.evcc.SetVehicleMode(r.Context(), guest.VehicleName, mode); err != nil {
 		writeError(w, http.StatusBadGateway, "could not set mode")
 		return
 	}

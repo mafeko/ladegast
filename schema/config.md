@@ -8,7 +8,7 @@ Konfigurationsdatei mit echten Werten gehoert ins Repository (siehe
 |------------------------------------|----------|---------|-----------|--------------|
 | `LADEGAST_LISTEN_ADDR`              | string   | nein    | `:8080`   | Bind-Adresse des HTTP-Servers |
 | `LADEGAST_PUBLIC_BASE_URL`           | URL      | ja      | –         | Basis-URL, unter der Ladegast von aussen erreichbar ist (fuer Link-Generierung) |
-| `LADEGAST_PUBLIC_PATH_PREFIX`        | string   | nein    | `/public` | Pfadpraefix fuer Freund-Routen |
+| `LADEGAST_PUBLIC_PATH_PREFIX`        | string   | nein    | `/public` | Pfadpraefix fuer Gast-Routen |
 | `LADEGAST_ADMIN_PATH_PREFIX`         | string   | nein    | `/admin`  | Pfadpraefix fuer Admin-Routen |
 | `LADEGAST_DATA_DIR`                  | path     | nein    | `./data`  | Verzeichnis fuer die bbolt-Datenbankdatei |
 | `LADEGAST_SESSION_SECRET`            | string   | ja      | –         | Signierschluessel fuer Session-Cookies (min. 32 Byte zufaellig) |

@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue'
-import { getDashboard, getSessions, getSettlements, friendLogout } from '../lib/api'
+import { getDashboard, getSessions, getSettlements, guestLogout } from '../lib/api'
 import type { Dashboard } from '../lib/types'
+import BrandHeader from './BrandHeader.vue'
 import SummaryCard from './SummaryCard.vue'
 import PriceInfo from './PriceInfo.vue'
 import UsageExplorer from './UsageExplorer.vue'
@@ -28,7 +29,7 @@ async function load(silent = false) {
 }
 
 async function logout() {
-  await friendLogout(props.uuid)
+  await guestLogout(props.uuid)
   emit('loggedOut')
 }
 
@@ -40,19 +41,17 @@ defineExpose({ load })
 <template>
   <div class="mx-auto max-w-5xl px-4 py-6 sm:py-10">
     <div class="mb-8 flex items-center justify-between gap-4">
-      <h1 class="text-xl font-semibold sm:text-2xl tracking-tight">
-        {{ dashboard ? `Hallo ${dashboard.friend.name}` : 'Ladegast' }}
-      </h1>
+      <BrandHeader :subtitle="dashboard ? `Hallo ${dashboard.guest.name}` : undefined" />
       <button
         type="button"
-        class="rounded-lg border border-gray-300 bg-white min-h-11 px-4 py-2 text-sm font-medium sm:min-h-0 text-gray-700 transition hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 dark:hover:bg-gray-800"
+        class="btn-outline"
         @click="logout"
       >
         Abmelden
       </button>
     </div>
-    <p v-if="loading" class="text-sm text-gray-500 dark:text-gray-400">Lade...</p>
-    <p v-else-if="error" role="alert" class="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-600 dark:bg-red-950/40 dark:text-red-400">
+    <p v-if="loading" class="text-sm text-gray-400">Lade...</p>
+    <p v-else-if="error" role="alert" class="alert-error">
       {{ error }}
     </p>
     <template v-else-if="dashboard">
@@ -67,9 +66,9 @@ defineExpose({ load })
         <SummaryCard title="Dieser Monat" :summary="dashboard.thisMonth" />
         <SummaryCard title="Dieses Jahr" :summary="dashboard.thisYear" />
       </div>
-      <PriceInfo :friend="dashboard.friend" />
+      <PriceInfo :guest="dashboard.guest" />
       <UsageExplorer
-        :cache-key="`friend:${props.uuid}`"
+        :cache-key="`guest:${props.uuid}`"
         :load="() => getSessions(props.uuid)"
         :load-settlements="() => getSettlements(props.uuid)"
       />

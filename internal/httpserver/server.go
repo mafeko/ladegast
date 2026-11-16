@@ -1,4 +1,4 @@
-// Package httpserver wires Ladegast's public (friend-facing) and admin
+// Package httpserver wires Ladegast's public (guest-facing) and admin
 // HTTP APIs, plus the embedded frontend. Network-level separation between
 // the admin surface and everything else (e.g. only exposing
 // ADMIN_PATH_PREFIX internally) is the operator's responsibility - see

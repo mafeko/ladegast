@@ -18,7 +18,7 @@ beforeEach(() => {
 
 describe('AdminSettlements', () => {
   it('lists settlements and the open amount', async () => {
-    const wrapper = mount(AdminSettlements, { props: { friendId: 'f1', friendName: 'Alex' } })
+    const wrapper = mount(AdminSettlements, { props: { guestId: 'f1', guestName: 'Alex' } })
     await flushPromises()
     expect(wrapper.text()).toContain('4,20')
     expect(wrapper.text()).toContain('1,50')
@@ -26,7 +26,7 @@ describe('AdminSettlements', () => {
 
   it('creates a settlement and reloads', async () => {
     vi.mocked(api.createSettlement).mockResolvedValue({ id: 's2', at: '2026-10-28T10:00:00Z' })
-    const wrapper = mount(AdminSettlements, { props: { friendId: 'f1', friendName: 'Alex' } })
+    const wrapper = mount(AdminSettlements, { props: { guestId: 'f1', guestName: 'Alex' } })
     await flushPromises()
     await wrapper.find('input[type="datetime-local"]').setValue('2026-10-20T08:30')
     await wrapper.find('form').trigger('submit')
@@ -37,7 +37,7 @@ describe('AdminSettlements', () => {
 
   it('deletes a settlement after confirmation', async () => {
     vi.mocked(api.deleteSettlement).mockResolvedValue(undefined)
-    const wrapper = mount(AdminSettlements, { props: { friendId: 'f1', friendName: 'Alex' } })
+    const wrapper = mount(AdminSettlements, { props: { guestId: 'f1', guestName: 'Alex' } })
     await flushPromises()
     await wrapper.findAll('button').find((b) => b.text() === 'Löschen')!.trigger('click')
     await flushPromises()

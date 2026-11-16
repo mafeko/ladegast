@@ -103,5 +103,5 @@ Punkt 3 (`ADMIN_PATH_PREFIX` nicht von außen erreichbar) eingehalten wird.
 
 Ladegast selbst hat keine Backup-Logik. Zu sichern ist ausschließlich die
 Datei unter `LADEGAST_DATA_DIR` (per Default `ladegast.db`) — sie enthält
-alle Freund-/Admin-/Rate-Limit-Daten. Ladedaten selbst liegen bei EVCC und
+alle Gast-/Admin-/Rate-Limit-Daten. Ladedaten selbst liegen bei EVCC und
 müssen dort separat gesichert werden.

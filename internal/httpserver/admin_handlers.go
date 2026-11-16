@@ -23,18 +23,18 @@ const (
 func (s *Server) registerAdminRoutes(mux *http.ServeMux) {
 	mux.HandleFunc("POST "+s.adminPath("/login"), s.handleAdminLogin)
 	mux.HandleFunc("POST "+s.adminPath("/logout"), s.requireAdmin(s.handleAdminLogout))
-	mux.HandleFunc("GET "+s.adminPath("/friends"), s.requireAdmin(s.handleAdminListFriends))
-	mux.HandleFunc("POST "+s.adminPath("/friends"), s.requireAdmin(s.handleAdminCreateFriend))
+	mux.HandleFunc("GET "+s.adminPath("/guests"), s.requireAdmin(s.handleAdminListGuests))
+	mux.HandleFunc("POST "+s.adminPath("/guests"), s.requireAdmin(s.handleAdminCreateGuest))
 	mux.HandleFunc("GET "+s.adminPath("/vehicles"), s.requireAdmin(s.handleAdminListVehicles))
-	mux.HandleFunc("PUT "+s.adminPath("/friends/{id}"), s.requireAdmin(s.handleAdminUpdateFriend))
-	mux.HandleFunc("DELETE "+s.adminPath("/friends/{id}"), s.requireAdmin(s.handleAdminDeleteFriend))
-	mux.HandleFunc("POST "+s.adminPath("/friends/{id}/regenerate-link"), s.requireAdmin(s.handleAdminRegenerateLink))
-	mux.HandleFunc("POST "+s.adminPath("/friends/{id}/reset-pin"), s.requireAdmin(s.handleAdminResetPIN))
-	mux.HandleFunc("GET "+s.adminPath("/friends/{id}/view-as/dashboard"), s.requireAdmin(s.handleAdminViewAsDashboard))
-	mux.HandleFunc("GET "+s.adminPath("/friends/{id}/view-as/sessions"), s.requireAdmin(s.handleAdminViewAsSessions))
-	mux.HandleFunc("GET "+s.adminPath("/friends/{id}/view-as/settlements"), s.requireAdmin(s.handleAdminViewAsSettlements))
-	mux.HandleFunc("POST "+s.adminPath("/friends/{id}/settlements"), s.requireAdmin(s.handleAdminCreateSettlement))
-	mux.HandleFunc("DELETE "+s.adminPath("/friends/{id}/settlements/{sid}"), s.requireAdmin(s.handleAdminDeleteSettlement))
+	mux.HandleFunc("PUT "+s.adminPath("/guests/{id}"), s.requireAdmin(s.handleAdminUpdateGuest))
+	mux.HandleFunc("DELETE "+s.adminPath("/guests/{id}"), s.requireAdmin(s.handleAdminDeleteGuest))
+	mux.HandleFunc("POST "+s.adminPath("/guests/{id}/regenerate-link"), s.requireAdmin(s.handleAdminRegenerateLink))
+	mux.HandleFunc("POST "+s.adminPath("/guests/{id}/reset-pin"), s.requireAdmin(s.handleAdminResetPIN))
+	mux.HandleFunc("GET "+s.adminPath("/guests/{id}/view-as/dashboard"), s.requireAdmin(s.handleAdminViewAsDashboard))
+	mux.HandleFunc("GET "+s.adminPath("/guests/{id}/view-as/sessions"), s.requireAdmin(s.handleAdminViewAsSessions))
+	mux.HandleFunc("GET "+s.adminPath("/guests/{id}/view-as/settlements"), s.requireAdmin(s.handleAdminViewAsSettlements))
+	mux.HandleFunc("POST "+s.adminPath("/guests/{id}/settlements"), s.requireAdmin(s.handleAdminCreateSettlement))
+	mux.HandleFunc("DELETE "+s.adminPath("/guests/{id}/settlements/{sid}"), s.requireAdmin(s.handleAdminDeleteSettlement))
 }
 
 func (s *Server) requireAdmin(next http.HandlerFunc) http.HandlerFunc {
@@ -77,24 +77,24 @@ func (s *Server) handleAdminLogout(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, map[string]bool{"ok": true})
 }
 
-func (s *Server) handleAdminListFriends(w http.ResponseWriter, r *http.Request) {
-	friends, err := s.store.ListFriends()
+func (s *Server) handleAdminListGuests(w http.ResponseWriter, r *http.Request) {
+	guests, err := s.store.ListGuests()
 	if err != nil {
 		writeError(w, http.StatusInternalServerError, "internal error")
 		return
 	}
-	views := make([]adminFriend, 0, len(friends))
-	for _, f := range friends {
-		views = append(views, s.adminFriendView(f))
+	views := make([]adminGuest, 0, len(guests))
+	for _, f := range guests {
+		views = append(views, s.adminGuestView(f))
 	}
 	writeJSON(w, http.StatusOK, views)
 }
 
 // handleAdminListVehicles returns the EVCC vehicle names seen in charging
-// sessions that no friend is assigned to yet. EVCC has no cheap way to list
+// sessions that no guest is assigned to yet. EVCC has no cheap way to list
 // configured vehicles, so a vehicle only shows up after its first session.
 func (s *Server) handleAdminListVehicles(w http.ResponseWriter, r *http.Request) {
-	friends, err := s.store.ListFriends()
+	guests, err := s.store.ListGuests()
 	if err != nil {
 		writeError(w, http.StatusInternalServerError, "internal error")
 		return
@@ -104,8 +104,8 @@ func (s *Server) handleAdminListVehicles(w http.ResponseWriter, r *http.Request)
 		writeError(w, http.StatusBadGateway, "could not reach EVCC")
 		return
 	}
-	assigned := make(map[string]bool, len(friends))
-	for _, f := range friends {
+	assigned := make(map[string]bool, len(guests))
+	for _, f := range guests {
 		assigned[f.VehicleName] = true
 	}
 	seen := map[string]bool{}
@@ -121,9 +121,9 @@ func (s *Server) handleAdminListVehicles(w http.ResponseWriter, r *http.Request)
 	writeJSON(w, http.StatusOK, names)
 }
 
-// adminFriend is the admin API's view of a friend: everything the admin UI
+// adminGuest is the admin API's view of a guest: everything the admin UI
 // needs, including the shareable link, but never the PIN hash.
-type adminFriend struct {
+type adminGuest struct {
 	ID                string    `json:"id"`
 	Name              string    `json:"name"`
 	VehicleName       string    `json:"vehicleName"`
@@ -134,8 +134,8 @@ type adminFriend struct {
 	Link              string    `json:"link"`
 }
 
-func (s *Server) adminFriendView(f store.Friend) adminFriend {
-	return adminFriend{
+func (s *Server) adminGuestView(f store.Guest) adminGuest {
+	return adminGuest{
 		ID:                f.ID,
 		Name:              f.Name,
 		VehicleName:       f.VehicleName,
@@ -143,11 +143,11 @@ func (s *Server) adminFriendView(f store.Friend) adminFriend {
 		RateGridPerKWh:    f.RateGridPerKWh,
 		CreatedAt:         f.CreatedAt,
 		LinkRegeneratedAt: f.LinkRegeneratedAt,
-		Link:              s.friendLink(f.ID),
+		Link:              s.guestLink(f.ID),
 	}
 }
 
-func (s *Server) friendLink(id string) string {
+func (s *Server) guestLink(id string) string {
 	return s.cfg.PublicBaseURL + s.publicPath("/l/"+id)
 }
 
@@ -178,7 +178,7 @@ func pinOrGenerate(w http.ResponseWriter, chosen string) (pin string, ok bool) {
 	return chosen, true
 }
 
-type createFriendRequest struct {
+type createGuestRequest struct {
 	Name            string  `json:"name"`
 	VehicleName     string  `json:"vehicleName"`
 	RateSolarPerKWh float64 `json:"rateSolarPerKWh"`
@@ -187,12 +187,12 @@ type createFriendRequest struct {
 	PIN string `json:"pin"`
 }
 
-func validRates(b createFriendRequest) bool {
+func validRates(b createGuestRequest) bool {
 	return b.RateSolarPerKWh >= 0 && b.RateGridPerKWh >= 0
 }
 
-func (s *Server) handleAdminCreateFriend(w http.ResponseWriter, r *http.Request) {
-	var body createFriendRequest
+func (s *Server) handleAdminCreateGuest(w http.ResponseWriter, r *http.Request) {
+	var body createGuestRequest
 	if !decodeJSON(w, r, &body) {
 		return
 	}
@@ -215,7 +215,7 @@ func (s *Server) handleAdminCreateFriend(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	friend := store.Friend{
+	guest := store.Guest{
 		ID:                idgen.UUID(),
 		Name:              body.Name,
 		VehicleName:       body.VehicleName,
@@ -225,27 +225,27 @@ func (s *Server) handleAdminCreateFriend(w http.ResponseWriter, r *http.Request)
 		CreatedAt:         time.Now(),
 		LinkRegeneratedAt: time.Now(),
 	}
-	if err := s.store.CreateFriend(friend); err != nil {
+	if err := s.store.CreateGuest(guest); err != nil {
 		writeError(w, http.StatusInternalServerError, "internal error")
 		return
 	}
 
 	writeJSON(w, http.StatusCreated, map[string]string{
-		"id":   friend.ID,
+		"id":   guest.ID,
 		"pin":  pin,
-		"link": s.friendLink(friend.ID),
+		"link": s.guestLink(guest.ID),
 	})
 }
 
-func (s *Server) handleAdminUpdateFriend(w http.ResponseWriter, r *http.Request) {
+func (s *Server) handleAdminUpdateGuest(w http.ResponseWriter, r *http.Request) {
 	id := r.PathValue("id")
-	friend, err := s.store.GetFriend(id)
+	guest, err := s.store.GetGuest(id)
 	if err != nil {
-		writeError(w, http.StatusNotFound, "friend not found")
+		writeError(w, http.StatusNotFound, "guest not found")
 		return
 	}
 
-	var body createFriendRequest
+	var body createGuestRequest
 	if !decodeJSON(w, r, &body) {
 		return
 	}
@@ -254,27 +254,27 @@ func (s *Server) handleAdminUpdateFriend(w http.ResponseWriter, r *http.Request)
 		return
 	}
 	if body.Name != "" {
-		friend.Name = body.Name
+		guest.Name = body.Name
 	}
 	if body.VehicleName != "" {
-		friend.VehicleName = body.VehicleName
+		guest.VehicleName = body.VehicleName
 	}
-	friend.RateSolarPerKWh = body.RateSolarPerKWh
-	friend.RateGridPerKWh = body.RateGridPerKWh
+	guest.RateSolarPerKWh = body.RateSolarPerKWh
+	guest.RateGridPerKWh = body.RateGridPerKWh
 
-	if err := s.store.UpdateFriend(friend); err != nil {
+	if err := s.store.UpdateGuest(guest); err != nil {
 		writeError(w, http.StatusInternalServerError, "internal error")
 		return
 	}
-	writeJSON(w, http.StatusOK, s.adminFriendView(friend))
+	writeJSON(w, http.StatusOK, s.adminGuestView(guest))
 }
 
-// handleAdminDeleteFriend removes a friend; their link and any session
-// cookie stop working immediately because requireFriend looks the friend up.
-func (s *Server) handleAdminDeleteFriend(w http.ResponseWriter, r *http.Request) {
-	if err := s.store.DeleteFriend(r.PathValue("id")); err != nil {
+// handleAdminDeleteGuest removes a guest; their link and any session
+// cookie stop working immediately because requireGuest looks the guest up.
+func (s *Server) handleAdminDeleteGuest(w http.ResponseWriter, r *http.Request) {
+	if err := s.store.DeleteGuest(r.PathValue("id")); err != nil {
 		if errors.Is(err, store.ErrNotFound) {
-			writeError(w, http.StatusNotFound, "friend not found")
+			writeError(w, http.StatusNotFound, "guest not found")
 			return
 		}
 		writeError(w, http.StatusInternalServerError, "internal error")
@@ -283,39 +283,39 @@ func (s *Server) handleAdminDeleteFriend(w http.ResponseWriter, r *http.Request)
 	w.WriteHeader(http.StatusNoContent)
 }
 
-// handleAdminRegenerateLink invalidates a friend's current link by moving
+// handleAdminRegenerateLink invalidates a guest's current link by moving
 // their record under a freshly generated UUID; the old link stops working
 // immediately because its ID no longer exists in the store.
 func (s *Server) handleAdminRegenerateLink(w http.ResponseWriter, r *http.Request) {
 	oldID := r.PathValue("id")
-	friend, err := s.store.GetFriend(oldID)
+	guest, err := s.store.GetGuest(oldID)
 	if err != nil {
-		writeError(w, http.StatusNotFound, "friend not found")
+		writeError(w, http.StatusNotFound, "guest not found")
 		return
 	}
 
-	friend.ID = idgen.UUID()
-	friend.LinkRegeneratedAt = time.Now()
-	if err := s.store.CreateFriend(friend); err != nil {
+	guest.ID = idgen.UUID()
+	guest.LinkRegeneratedAt = time.Now()
+	if err := s.store.CreateGuest(guest); err != nil {
 		writeError(w, http.StatusInternalServerError, "internal error")
 		return
 	}
-	if err := s.store.DeleteFriend(oldID); err != nil {
+	if err := s.store.DeleteGuest(oldID); err != nil {
 		writeError(w, http.StatusInternalServerError, "internal error")
 		return
 	}
 
 	writeJSON(w, http.StatusOK, map[string]string{
-		"id":   friend.ID,
-		"link": s.friendLink(friend.ID),
+		"id":   guest.ID,
+		"link": s.guestLink(guest.ID),
 	})
 }
 
 func (s *Server) handleAdminResetPIN(w http.ResponseWriter, r *http.Request) {
 	id := r.PathValue("id")
-	friend, err := s.store.GetFriend(id)
+	guest, err := s.store.GetGuest(id)
 	if err != nil {
-		writeError(w, http.StatusNotFound, "friend not found")
+		writeError(w, http.StatusNotFound, "guest not found")
 		return
 	}
 
@@ -337,8 +337,8 @@ func (s *Server) handleAdminResetPIN(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusInternalServerError, "internal error")
 		return
 	}
-	friend.PINHash = string(hash)
-	if err := s.store.UpdateFriend(friend); err != nil {
+	guest.PINHash = string(hash)
+	if err := s.store.UpdateGuest(guest); err != nil {
 		writeError(w, http.StatusInternalServerError, "internal error")
 		return
 	}
@@ -346,12 +346,12 @@ func (s *Server) handleAdminResetPIN(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) handleAdminViewAsDashboard(w http.ResponseWriter, r *http.Request) {
-	friend, err := s.store.GetFriend(r.PathValue("id"))
+	guest, err := s.store.GetGuest(r.PathValue("id"))
 	if err != nil {
-		writeError(w, http.StatusNotFound, "friend not found")
+		writeError(w, http.StatusNotFound, "guest not found")
 		return
 	}
-	summary, err := s.dashboardSummary(r, friend)
+	summary, err := s.dashboardSummary(r, guest)
 	if err != nil {
 		writeError(w, http.StatusBadGateway, "could not reach EVCC")
 		return
@@ -360,10 +360,10 @@ func (s *Server) handleAdminViewAsDashboard(w http.ResponseWriter, r *http.Reque
 }
 
 func (s *Server) handleAdminViewAsSessions(w http.ResponseWriter, r *http.Request) {
-	friend, err := s.store.GetFriend(r.PathValue("id"))
+	guest, err := s.store.GetGuest(r.PathValue("id"))
 	if err != nil {
-		writeError(w, http.StatusNotFound, "friend not found")
+		writeError(w, http.StatusNotFound, "guest not found")
 		return
 	}
-	s.handleFriendSessions(w, r, friend)
+	s.handleGuestSessions(w, r, guest)
 }

@@ -1,6 +1,6 @@
 import { mount } from '@vue/test-utils'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import AdminFriendRow from './AdminFriendRow.vue'
+import AdminGuestDialog from './AdminGuestDialog.vue'
 import * as api from '../lib/api'
 
 vi.mock('../lib/api')
@@ -9,7 +9,7 @@ beforeEach(() => {
   vi.stubGlobal('confirm', vi.fn(() => true))
 })
 
-const friend = {
+const guest = {
   id: '1',
   name: 'Alex',
   vehicleName: 'vehicle_1',
@@ -20,9 +20,9 @@ const friend = {
 }
 
 function mountRow() {
-  return mount(AdminFriendRow, {
-    props: { friend },
-    global: { stubs: { RouterLink: true } },
+  return mount(AdminGuestDialog, {
+    props: { guest },
+    global: { stubs: { RouterLink: true, AdminSettlements: true } },
   })
 }
 
@@ -32,10 +32,18 @@ function button(wrapper: ReturnType<typeof mountRow>, text: string) {
   return b
 }
 
-describe('AdminFriendRow', () => {
+describe('AdminGuestDialog', () => {
+  it('disables Speichern until something changed', async () => {
+    const wrapper = mountRow()
+    expect(button(wrapper, 'Speichern').attributes('disabled')).toBeDefined()
+    await wrapper.find('input[aria-label="Name"]').setValue('Alexa')
+    expect(button(wrapper, 'Speichern').attributes('disabled')).toBeUndefined()
+  })
+
+
   it('saves all edited fields and emits updated', async () => {
-    const updated = { ...friend, name: 'Alexandra', rateSolarPerKWh: 0.2 }
-    vi.mocked(api.updateFriend).mockResolvedValue(updated)
+    const updated = { ...guest, name: 'Alexandra', rateSolarPerKWh: 0.2 }
+    vi.mocked(api.updateGuest).mockResolvedValue(updated)
     const wrapper = mountRow()
 
     await wrapper.find('input[aria-label="Name"]').setValue('Alexandra')
@@ -43,7 +51,7 @@ describe('AdminFriendRow', () => {
     await button(wrapper, 'Speichern').trigger('click')
     await flushMicrotasks()
 
-    expect(api.updateFriend).toHaveBeenCalledWith('1', {
+    expect(api.updateGuest).toHaveBeenCalledWith('1', {
       name: 'Alexandra',
       vehicleName: 'vehicle_1',
       rateSolarPerKWh: 0.2,
@@ -54,9 +62,10 @@ describe('AdminFriendRow', () => {
   })
 
   it('shows an error message when saving fails', async () => {
-    vi.mocked(api.updateFriend).mockRejectedValue(new Error('internal error'))
+    vi.mocked(api.updateGuest).mockRejectedValue(new Error('internal error'))
     const wrapper = mountRow()
 
+    await wrapper.find('input[aria-label="Name"]').setValue('Other')
     await button(wrapper, 'Speichern').trigger('click')
     await flushMicrotasks()
 
@@ -64,7 +73,7 @@ describe('AdminFriendRow', () => {
     expect(wrapper.emitted('updated')).toBeUndefined()
   })
 
-  it('copies the friend link at any time', async () => {
+  it('copies the guest link at any time', async () => {
     const writeText = vi.fn().mockResolvedValue(undefined)
     vi.stubGlobal('navigator', { clipboard: { writeText } })
     const wrapper = mountRow()
@@ -87,13 +96,13 @@ describe('AdminFriendRow', () => {
   })
 
   it('shows an error message when regenerating the link fails', async () => {
-    vi.mocked(api.regenerateLink).mockRejectedValue(new Error('friend not found'))
+    vi.mocked(api.regenerateLink).mockRejectedValue(new Error('guest not found'))
     const wrapper = mountRow()
 
     await button(wrapper, 'Link neu').trigger('click')
     await flushMicrotasks()
 
-    expect(wrapper.text()).toContain('friend not found')
+    expect(wrapper.text()).toContain('guest not found')
   })
 
   it('sets a chosen PIN via the PIN form', async () => {
@@ -102,12 +111,12 @@ describe('AdminFriendRow', () => {
 
     await button(wrapper, 'PIN ändern').trigger('click')
     await wrapper.find('input[aria-label="Neue PIN"]').setValue('4711')
-    await wrapper.find('form').trigger('submit')
+    await wrapper.findAll('form')[1].trigger('submit')
     await flushMicrotasks()
 
     expect(api.resetPin).toHaveBeenCalledWith('1', '4711')
     expect(wrapper.text()).toContain('4711')
-    expect(wrapper.find('form').exists()).toBe(false)
+    expect(wrapper.findAll('form').length).toBe(1)
   })
 
   it('generates a random PIN when asked to', async () => {
@@ -133,25 +142,25 @@ describe('AdminFriendRow', () => {
     expect(wrapper.text()).toContain('internal error')
   })
 
-  it('deletes the friend after confirmation and emits deleted', async () => {
-    vi.mocked(api.deleteFriend).mockResolvedValue(undefined)
+  it('deletes the guest after confirmation and emits deleted', async () => {
+    vi.mocked(api.deleteGuest).mockResolvedValue(undefined)
     const wrapper = mountRow()
 
     await button(wrapper, 'Löschen').trigger('click')
     await flushMicrotasks()
 
-    expect(api.deleteFriend).toHaveBeenCalledWith('1')
-    expect(wrapper.emitted('deleted')).toEqual([[friend]])
+    expect(api.deleteGuest).toHaveBeenCalledWith('1')
+    expect(wrapper.emitted('deleted')).toEqual([[guest]])
   })
 
   it('shows an error message when deleting fails', async () => {
-    vi.mocked(api.deleteFriend).mockRejectedValue(new Error('friend not found'))
+    vi.mocked(api.deleteGuest).mockRejectedValue(new Error('guest not found'))
     const wrapper = mountRow()
 
     await button(wrapper, 'Löschen').trigger('click')
     await flushMicrotasks()
 
-    expect(wrapper.text()).toContain('friend not found')
+    expect(wrapper.text()).toContain('guest not found')
     expect(wrapper.emitted('deleted')).toBeUndefined()
   })
 
@@ -166,7 +175,7 @@ describe('AdminFriendRow', () => {
     await flushMicrotasks()
 
     expect(api.regenerateLink).not.toHaveBeenCalled()
-    expect(api.deleteFriend).not.toHaveBeenCalled()
+    expect(api.deleteGuest).not.toHaveBeenCalled()
     expect(api.resetPin).not.toHaveBeenCalled()
   })
 })
