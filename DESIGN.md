@@ -191,6 +191,7 @@ POST /public/l/{uuid}/mode          { mode: "smart"|"now" }
 POST   /admin/login
 POST   /admin/logout
 GET    /admin/friends
+GET    /admin/vehicles                       Fahrzeugnamen aus EVCC-Sessions, die noch keinem Freund zugeordnet sind
 POST   /admin/friends                        neuen Freund anlegen (generiert UUID; PIN optional vorgebbar, sonst zufällig)
 PUT    /admin/friends/{id}                   Tarife/Name/Fahrzeug ändern
 DELETE /admin/friends/{id}                   Freund löschen (Link und PIN sofort ungültig)

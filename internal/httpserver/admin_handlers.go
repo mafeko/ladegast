@@ -5,6 +5,7 @@ import (
 	"errors"
 	"io"
 	"net/http"
+	"sort"
 	"time"
 
 	"golang.org/x/crypto/bcrypt"
@@ -24,6 +25,7 @@ func (s *Server) registerAdminRoutes(mux *http.ServeMux) {
 	mux.HandleFunc("POST "+s.adminPath("/logout"), s.requireAdmin(s.handleAdminLogout))
 	mux.HandleFunc("GET "+s.adminPath("/friends"), s.requireAdmin(s.handleAdminListFriends))
 	mux.HandleFunc("POST "+s.adminPath("/friends"), s.requireAdmin(s.handleAdminCreateFriend))
+	mux.HandleFunc("GET "+s.adminPath("/vehicles"), s.requireAdmin(s.handleAdminListVehicles))
 	mux.HandleFunc("PUT "+s.adminPath("/friends/{id}"), s.requireAdmin(s.handleAdminUpdateFriend))
 	mux.HandleFunc("DELETE "+s.adminPath("/friends/{id}"), s.requireAdmin(s.handleAdminDeleteFriend))
 	mux.HandleFunc("POST "+s.adminPath("/friends/{id}/regenerate-link"), s.requireAdmin(s.handleAdminRegenerateLink))
@@ -86,6 +88,37 @@ func (s *Server) handleAdminListFriends(w http.ResponseWriter, r *http.Request) 
 		views = append(views, s.adminFriendView(f))
 	}
 	writeJSON(w, http.StatusOK, views)
+}
+
+// handleAdminListVehicles returns the EVCC vehicle names seen in charging
+// sessions that no friend is assigned to yet. EVCC has no cheap way to list
+// configured vehicles, so a vehicle only shows up after its first session.
+func (s *Server) handleAdminListVehicles(w http.ResponseWriter, r *http.Request) {
+	friends, err := s.store.ListFriends()
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, "internal error")
+		return
+	}
+	sessions, err := s.evcc.Sessions(r.Context(), 0, 0)
+	if err != nil {
+		writeError(w, http.StatusBadGateway, "could not reach EVCC")
+		return
+	}
+	assigned := make(map[string]bool, len(friends))
+	for _, f := range friends {
+		assigned[f.VehicleName] = true
+	}
+	seen := map[string]bool{}
+	names := []string{}
+	for _, sess := range sessions {
+		if sess.Vehicle == "" || assigned[sess.Vehicle] || seen[sess.Vehicle] {
+			continue
+		}
+		seen[sess.Vehicle] = true
+		names = append(names, sess.Vehicle)
+	}
+	sort.Strings(names)
+	writeJSON(w, http.StatusOK, names)
 }
 
 // adminFriend is the admin API's view of a friend: everything the admin UI
